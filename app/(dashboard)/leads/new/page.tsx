@@ -1,0 +1,177 @@
+"use client";
+
+import { useCRM } from "@/contexts/CRMContext";
+import { CONSULTANTS, CITIES, COURSES, SOURCES, STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG } from "@/lib/constants";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import type { LeadTemperature, PipelineStage, LeadSource } from "@/types";
+import { cn } from "@/lib/utils";
+import { ChevronLeft } from "lucide-react";
+import Link from "next/link";
+
+export default function NewLeadPage() {
+  const router = useRouter();
+  const { addLead } = useCRM();
+
+  const [form, setForm] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    country: "Brazil",
+    currentLocation: "",
+    courseInterest: "",
+    preferredCity: "",
+    budget: "",
+    source: "Instagram" as LeadSource,
+    temperature: "warm" as LeadTemperature,
+    stage: "new_lead" as PipelineStage,
+    assignedConsultant: CONSULTANTS[0],
+    notes: "",
+  });
+
+  function set(field: string, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.fullName.trim()) {
+      toast.error("Full name is required");
+      return;
+    }
+    const lead = addLead(form);
+    toast.success(`${lead.fullName} added to CRM`);
+    router.push(`/leads/${lead.id}`);
+  }
+
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <div className="glass-card rounded-xl p-5 space-y-4">
+      <h3 className="text-sm font-semibold text-foreground border-b border-border pb-3">{title}</h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>
+    </div>
+  );
+
+  const Field = ({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) => (
+    <div className={cn("flex flex-col gap-1.5", full && "sm:col-span-2")}>
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+
+  return (
+    <div className="max-w-3xl mx-auto space-y-5">
+      <div className="flex items-center gap-3">
+        <Link href="/leads">
+          <Button variant="ghost" size="icon"><ChevronLeft className="w-4 h-4" /></Button>
+        </Link>
+        <h2 className="text-lg font-semibold">New Lead</h2>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Section title="Personal Information">
+          <Field label="Full Name *">
+            <Input value={form.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Ana Silva" className="bg-secondary/50" />
+          </Field>
+          <Field label="Phone / WhatsApp">
+            <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+55 11 99999-9999" className="bg-secondary/50" />
+          </Field>
+          <Field label="Email">
+            <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="ana@email.com" className="bg-secondary/50" />
+          </Field>
+          <Field label="Country of Origin">
+            <Input value={form.country} onChange={(e) => set("country", e.target.value)} placeholder="Brazil" className="bg-secondary/50" />
+          </Field>
+          <Field label="Current Location" full>
+            <Input value={form.currentLocation} onChange={(e) => set("currentLocation", e.target.value)} placeholder="São Paulo, Brazil" className="bg-secondary/50" />
+          </Field>
+        </Section>
+
+        <Section title="Course & Destination">
+          <Field label="Course Interest">
+            <select value={form.courseInterest} onChange={(e) => set("courseInterest", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+              <option value="">Select course...</option>
+              {COURSES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Preferred City">
+            <select value={form.preferredCity} onChange={(e) => set("preferredCity", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+              <option value="">Select city...</option>
+              {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Budget" full>
+            <select value={form.budget} onChange={(e) => set("budget", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+              <option value="">Select budget range...</option>
+              {["Under AUD 5,000", "AUD 5,000–10,000", "AUD 10,000–20,000", "AUD 20,000–40,000", "Over AUD 40,000"].map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </select>
+          </Field>
+        </Section>
+
+        <Section title="CRM Details">
+          <Field label="Lead Source">
+            <select value={form.source} onChange={(e) => set("source", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+              {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </Field>
+          <Field label="Temperature">
+            <div className="flex gap-2">
+              {(["hot", "warm", "cold"] as LeadTemperature[]).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => set("temperature", t)}
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize",
+                    form.temperature === t
+                      ? t === "hot" ? "bg-red-500/20 border-red-500/50 text-red-300"
+                        : t === "warm" ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
+                        : "bg-blue-500/20 border-blue-500/50 text-blue-300"
+                      : "bg-secondary/50 border-border text-muted-foreground"
+                  )}
+                >
+                  {t === "hot" ? "🔥" : t === "warm" ? "☀️" : "❄️"} {t}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Pipeline Stage">
+            <select value={form.stage} onChange={(e) => set("stage", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+              {PHASE_ORDER.map((phase) => (
+                <optgroup key={phase} label={PHASE_CONFIG[phase].label}>
+                  {PHASE_CONFIG[phase].stages.map((s) => (
+                    <option key={s} value={s}>{STAGE_CONFIG[s].label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </Field>
+          <Field label="Assigned Consultant">
+            <select value={form.assignedConsultant} onChange={(e) => set("assignedConsultant", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+              {CONSULTANTS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Initial Notes" full>
+            <textarea
+              value={form.notes}
+              onChange={(e) => set("notes", e.target.value)}
+              placeholder="Any initial observations about this lead..."
+              rows={3}
+              className="w-full bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none"
+            />
+          </Field>
+        </Section>
+
+        <div className="flex gap-3 justify-end">
+          <Button variant="outline" type="button" onClick={() => router.back()}>Cancel</Button>
+          <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90">Create Lead</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
