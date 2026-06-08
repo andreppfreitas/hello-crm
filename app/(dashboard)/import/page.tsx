@@ -29,11 +29,54 @@ const LEAD_FIELDS = [
 
 type FieldKey = typeof LEAD_FIELDS[number]["key"];
 
+function parseCSVLine(line: string): string[] {
+  // Handle quoted fields with commas inside
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') { inQuotes = !inQuotes; }
+    else if (ch === "," && !inQuotes) { result.push(current.trim()); current = ""; }
+    else { current += ch; }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+// Known header keywords — used to auto-detect the real header row
+const HEADER_KEYWORDS = ["nome", "name", "telefone", "phone", "email", "curso", "course", "cidade", "city", "temperatura", "temperature", "consultor"];
+
+function isHeaderRow(cells: string[]): boolean {
+  const text = cells.join(" ").toLowerCase();
+  return HEADER_KEYWORDS.filter((k) => text.includes(k)).length >= 2;
+}
+
 function parseCSV(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.trim().split("\n").filter(Boolean);
-  if (lines.length === 0) return { headers: [], rows: [] };
-  const parse = (line: string) => line.split(",").map((c) => c.trim().replace(/^"|"$/g, ""));
-  return { headers: parse(lines[0]), rows: lines.slice(1).map(parse) };
+  const rawLines = text.split("\n").map((l) => l.replace(/\r$/, "")).filter((l) => l.trim());
+  if (rawLines.length === 0) return { headers: [], rows: [] };
+
+  const parsed = rawLines.map(parseCSVLine);
+
+  // Find the actual header row (skip decorative title rows from the Excel template)
+  let headerIdx = 0;
+  for (let i = 0; i < Math.min(parsed.length, 8); i++) {
+    if (isHeaderRow(parsed[i])) { headerIdx = i; break; }
+  }
+
+  const headers = parsed[headerIdx];
+  // Data rows: skip template note rows (rows where all cells are empty or look like instructions)
+  const rows = parsed
+    .slice(headerIdx + 1)
+    .filter((row) => {
+      const first = row[0]?.trim() ?? "";
+      // Skip rows that are clearly instructions/examples
+      if (first.startsWith("←") || first.startsWith("*") || first.startsWith("★") || first.startsWith("Preencha")) return false;
+      // Skip completely empty rows
+      return row.some((c) => c.trim() !== "");
+    });
+
+  return { headers, rows };
 }
 
 function guessMapping(header: string): FieldKey {
