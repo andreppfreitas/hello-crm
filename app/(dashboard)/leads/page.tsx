@@ -251,8 +251,19 @@ function LeadsInner() {
 
   const scored = useMemo(() => leads.map((l) => ({ ...l, score: computeScore(l) })), [leads]);
 
+  // Collapse grouped leads: only show primary (or first member) per group
+  const deduped = useMemo(() => {
+    const seenGroups = new Set<string>();
+    return scored.filter((l) => {
+      if (!l.groupId) return true;
+      if (seenGroups.has(l.groupId)) return false;
+      seenGroups.add(l.groupId);
+      return true;
+    });
+  }, [scored]);
+
   const filtered = useMemo(() => {
-    let list = [...scored];
+    let list = [...deduped];
     if (search) {
       const q = search.toLowerCase();
       list = list.filter((l) => l.fullName.toLowerCase().includes(q) || l.email.toLowerCase().includes(q) || l.phone.includes(q));
@@ -345,7 +356,7 @@ function LeadsInner() {
         <Link href="/import" className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
           Importar CSV
         </Link>
-        <p className="text-sm text-muted-foreground ml-auto">{filtered.length} leads</p>
+        <p className="text-sm text-muted-foreground ml-auto">{leads.length} leads</p>
       </div>
 
       {/* Filters */}
@@ -420,7 +431,12 @@ function LeadsInner() {
               {filtered.length === 0 && (
                 <tr><td colSpan={10} className="px-4 py-12 text-center text-muted-foreground text-sm">Nenhum lead encontrado.</td></tr>
               )}
-              {filtered.map((lead) => (
+              {filtered.map((lead) => {
+                const groupMembers = lead.groupId
+                  ? scored.filter((l) => l.groupId === lead.groupId && l.id !== lead.id)
+                  : [];
+                const groupLabel = lead.groupType === "couple" ? "👫" : "👨‍👩‍👧";
+                return (
                 <tr key={lead.id} className={cn("hover:bg-white/3 transition-colors group", selected.has(lead.id) && "bg-primary/5")}>
                   <td className="px-3 py-3">
                     <input type="checkbox" checked={selected.has(lead.id)} onChange={() => toggleOne(lead.id)} className="w-4 h-4 rounded accent-primary cursor-pointer" />
@@ -430,7 +446,17 @@ function LeadsInner() {
                       <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
                         {initials(lead.fullName)}
                       </div>
-                      <EditableName lead={lead} onSave={(v) => updateLead(lead.id, { fullName: v })} />
+                      <div>
+                        <EditableName lead={lead} onSave={(v) => updateLead(lead.id, { fullName: v })} />
+                        {groupMembers.length > 0 && (
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <span className="text-xs">{groupLabel}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {groupMembers.map((m) => m.fullName.split(" ")[0]).join(", ")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">
@@ -458,7 +484,8 @@ function LeadsInner() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

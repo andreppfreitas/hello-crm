@@ -130,6 +130,10 @@ export interface Lead {
   stageChanges: StageChangeEvent[];
   visaChecklist: VisaChecklistItem[];
   score?: number;
+  // Group (casal / família)
+  groupId?: string;
+  groupType?: "couple" | "family";
+  groupRole?: "primary" | "member";
   // Timestamps
   createdAt: string;
   updatedAt: string;

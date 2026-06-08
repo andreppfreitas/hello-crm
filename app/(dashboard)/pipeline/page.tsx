@@ -67,7 +67,7 @@ function DroppableStageRow({
 
 // ── Draggable card ──────────────────────────────────────────────────────────
 
-function DraggableCard({ lead, isDragging }: { lead: Lead; isDragging?: boolean }) {
+function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isDragging?: boolean; groupPartnerName?: string }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: lead.id });
 
   const style = transform
@@ -93,11 +93,18 @@ function DraggableCard({ lead, isDragging }: { lead: Lead; isDragging?: boolean 
           <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
             {initials(lead.fullName)}
           </div>
-          <Link href={`/leads/${lead.id}`} onClick={(e) => e.stopPropagation()}>
-            <span className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors block max-w-[120px]">
-              {lead.fullName}
-            </span>
-          </Link>
+          <div>
+            <Link href={`/leads/${lead.id}`} onClick={(e) => e.stopPropagation()}>
+              <span className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors block max-w-[120px]">
+                {lead.fullName}
+              </span>
+            </Link>
+            {groupPartnerName && (
+              <span className="text-[10px] text-muted-foreground">
+                {lead.groupType === "couple" ? "👫" : "👨‍👩‍👧"} {groupPartnerName}
+              </span>
+            )}
+          </div>
         </div>
         <TemperatureBadge temp={lead.temperature} className="text-[10px] px-1.5 py-0.5 flex-shrink-0" />
       </div>
@@ -177,8 +184,15 @@ export default function PipelinePage() {
     if (overId.startsWith("stage::")) {
       const targetStage = overId.replace("stage::", "") as PipelineStage;
       if (lead.stage !== targetStage) {
-        updateLead(leadId, { stage: targetStage });
-        toast.success(`Movido para "${STAGE_CONFIG[targetStage].label}"`);
+        if (lead.groupId) {
+          const groupLeads = leads.filter((l) => l.groupId === lead.groupId);
+          groupLeads.forEach((l) => updateLead(l.id, { stage: targetStage }));
+          const emoji = lead.groupType === "couple" ? "👫" : "👨‍👩‍👧";
+          toast.success(`${emoji} Grupo movido para "${STAGE_CONFIG[targetStage].label}"`);
+        } else {
+          updateLead(leadId, { stage: targetStage });
+          toast.success(`Movido para "${STAGE_CONFIG[targetStage].label}"`);
+        }
       }
     }
   }
@@ -217,15 +231,30 @@ export default function PipelinePage() {
                 </div>
               </div>
 
-              {/* Cards */}
+              {/* Cards — hide non-primary group members */}
               <div className="flex flex-col gap-2 min-h-[60px] p-1">
-                {phaseLeads.map((lead) => (
-                  <DraggableCard
-                    key={lead.id}
-                    lead={lead}
-                    isDragging={lead.id === activeId}
-                  />
-                ))}
+                {(() => {
+                  const seenGroups = new Set<string>();
+                  return phaseLeads.filter((l) => {
+                    if (!l.groupId) return true;
+                    if (seenGroups.has(l.groupId)) return false;
+                    seenGroups.add(l.groupId);
+                    return true;
+                  }).map((lead) => {
+                    const partners = lead.groupId
+                      ? phaseLeads.filter((l) => l.groupId === lead.groupId && l.id !== lead.id)
+                      : [];
+                    const partnerName = partners.map((p) => p.fullName.split(" ")[0]).join(", ");
+                    return (
+                      <DraggableCard
+                        key={lead.id}
+                        lead={lead}
+                        isDragging={lead.id === activeId}
+                        groupPartnerName={partnerName || undefined}
+                      />
+                    );
+                  });
+                })()}
                 {phaseLeads.length === 0 && !activeId && (
                   <div className="border-2 border-dashed border-border/40 rounded-xl h-12 flex items-center justify-center">
                     <p className="text-xs text-muted-foreground/60">Nenhum lead</p>

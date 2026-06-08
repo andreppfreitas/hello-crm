@@ -24,6 +24,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 import { TemplateDrawer } from "@/components/shared/TemplateDrawer";
 import { ReminderModal } from "@/components/shared/ReminderModal";
+import { GroupModal } from "@/components/shared/GroupModal";
+import { Link2 } from "lucide-react";
 
 const TABS = ["Overview", "Tasks", "Notes", "Timeline", "Payments", "Visa", "Documents"] as const;
 type Tab = typeof TABS[number];
@@ -40,6 +42,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
   const [editStage, setEditStage] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
+  const [showGroup, setShowGroup] = useState(false);
 
   if (!lead) return notFound();
 
@@ -129,6 +132,15 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
             <Bell className="w-3.5 h-3.5 text-primary" />
             Lembrete
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowGroup(true)}
+            className={cn("gap-2", lead.groupId && "border-primary/50 text-primary bg-primary/10")}
+          >
+            <Link2 className="w-3.5 h-3.5" />
+            {lead.groupId ? (lead.groupType === "couple" ? "👫 Casal" : "👨‍👩‍👧 Família") : "Vincular"}
+          </Button>
           <Button variant="ghost" size="icon" className="text-destructive" onClick={handleDelete}>
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -137,6 +149,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
 
       <TemplateDrawer lead={lead} open={showTemplates} onClose={() => setShowTemplates(false)} />
       <ReminderModal leadId={lead.id} leadName={lead.fullName} open={showReminder} onClose={() => setShowReminder(false)} />
+      <GroupModal lead={lead} open={showGroup} onOpenChange={setShowGroup} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         {/* Left: details panel */}
