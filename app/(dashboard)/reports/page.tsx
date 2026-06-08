@@ -99,7 +99,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       {/* Summary KPIs */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Leads", value: leads.length, color: "text-blue-400" },
           { label: "Closed Won", value: leads.filter((l) => l.stage === "closed_won").length, color: "text-emerald-400" },

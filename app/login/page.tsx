@@ -54,12 +54,12 @@ function LoginForm() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hello-logo.png" alt="Hello Australia" className="h-28 w-auto" />
+          <img src="/hello-logo.png" alt="Hello Australia" className="h-20 sm:h-28 w-auto" />
           <p className="text-sm text-muted-foreground">Sistema interno de gestão de leads</p>
         </div>
 
         {/* Card */}
-        <div className="glass-card rounded-2xl p-8 space-y-6 shadow-2xl">
+        <div className="glass-card rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
           <div>
             <h2 className="text-lg font-semibold text-foreground">Entrar na sua conta</h2>
             <p className="text-sm text-muted-foreground mt-0.5">Acesso exclusivo para consultores Hello Australia</p>

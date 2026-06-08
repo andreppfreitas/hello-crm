@@ -109,39 +109,39 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
   return (
     <div className="max-w-6xl mx-auto space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/leads"><Button variant="ghost" size="icon"><ChevronLeft className="w-4 h-4" /></Button></Link>
-          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary text-lg font-bold">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/leads"><Button variant="ghost" size="icon" className="flex-shrink-0"><ChevronLeft className="w-4 h-4" /></Button></Link>
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary text-base sm:text-lg font-bold flex-shrink-0">
             {initials(lead.fullName)}
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-foreground">{lead.fullName}</h2>
-            <p className="text-sm text-muted-foreground">{lead.courseInterest} · {lead.preferredCity}</p>
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">{lead.fullName}</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">{lead.courseInterest} · {lead.preferredCity}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <TemperatureBadge temp={lead.temperature} />
           <StageBadge stage={lead.stage} />
           <WhatsAppButton lead={lead} />
-          <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} className="gap-1.5 h-8">
             <Sparkles className="w-3.5 h-3.5 text-primary" />
-            Templates
+            <span className="hidden sm:inline">Templates</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setShowReminder(true)} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowReminder(true)} className="gap-1.5 h-8">
             <Bell className="w-3.5 h-3.5 text-primary" />
-            Lembrete
+            <span className="hidden sm:inline">Lembrete</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowGroup(true)}
-            className={cn("gap-2", lead.groupId && "border-primary/50 text-primary bg-primary/10")}
+            className={cn("gap-1.5 h-8", lead.groupId && "border-primary/50 text-primary bg-primary/10")}
           >
             <Link2 className="w-3.5 h-3.5" />
-            {lead.groupId ? (lead.groupType === "couple" ? "👫 Casal" : "👨‍👩‍👧 Família") : "Vincular"}
+            <span className="hidden sm:inline">{lead.groupId ? (lead.groupType === "couple" ? "👫 Casal" : "👨‍👩‍👧 Família") : "Vincular"}</span>
           </Button>
-          <Button variant="ghost" size="icon" className="text-destructive" onClick={handleDelete}>
+          <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={handleDelete}>
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
@@ -341,7 +341,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
         {/* Right: tabs */}
         <div className="lg:col-span-2 space-y-4">
           {/* Tab bar */}
-          <div className="glass-card rounded-xl p-1 flex gap-1">
+          <div className="glass-card rounded-xl p-1 flex gap-1 overflow-x-auto scrollbar-thin">
             {TABS.map((tab) => (
               <button
                 key={tab}

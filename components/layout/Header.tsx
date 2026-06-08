@@ -2,12 +2,16 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { PlusCircle, Search, Bell, LogOut, ChevronDown } from "lucide-react";
+import { PlusCircle, Search, Bell, LogOut, ChevronDown, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+interface HeaderProps {
+  onMenuToggle?: () => void;
+}
 
 const PAGE_TITLES_PT: Record<string, string> = {
   "/dashboard": "Dashboard",
@@ -33,7 +37,7 @@ const PAGE_TITLES_EN: Record<string, string> = {
   "/import": "Import CSV",
 };
 
-export function Header() {
+export function Header({ onMenuToggle }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
@@ -72,11 +76,22 @@ export function Header() {
   }
 
   return (
-    <header className="flex items-center justify-between px-6 py-4 border-b border-border bg-background/60 backdrop-blur-sm sticky top-0 z-30">
-      <h1 className="text-lg font-semibold text-foreground">{title}</h1>
-      <div className="flex items-center gap-3">
-        {/* Search */}
-        <div className="relative">
+    <header className="flex items-center justify-between px-3 md:px-6 py-3 md:py-4 border-b border-border bg-background/60 backdrop-blur-sm sticky top-0 z-30 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuToggle}
+          className="lg:hidden p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          aria-label="Open menu"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <h1 className="text-base md:text-lg font-semibold text-foreground truncate">{title}</h1>
+      </div>
+
+      <div className="flex items-center gap-1.5 md:gap-3">
+        {/* Search — hidden on very small screens, visible md+ */}
+        <div className="relative hidden sm:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder={t("search")}
@@ -88,43 +103,44 @@ export function Header() {
                 setSearch("");
               }
             }}
-            className="pl-9 w-52 bg-secondary/50 border-border text-sm"
+            className="pl-9 w-40 md:w-52 bg-secondary/50 border-border text-sm"
           />
         </div>
 
         {/* Language toggle */}
         <button
           onClick={toggleLanguage}
-          className="h-7 px-2.5 rounded-lg text-xs font-semibold border border-border bg-secondary/50 hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+          className="h-8 px-2 rounded-lg text-xs font-semibold border border-border bg-secondary/50 hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
         >
           {language === "pt" ? "🇧🇷 PT" : "🇦🇺 EN"}
         </button>
 
         {/* Bell */}
-        <button className="relative p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors">
+        <button className="relative p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
           <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-primary rounded-full" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
         </button>
 
-        {/* New Lead */}
+        {/* New Lead — hidden on very small screens */}
         <Link
           href="/leads/new"
-          className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-[0.8rem] font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+          className="hidden sm:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-[0.8rem] font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
         >
           <PlusCircle className="w-3.5 h-3.5" />
-          {t("newLead")}
+          <span className="hidden md:inline">{t("newLead")}</span>
+          <span className="md:hidden">+</span>
         </Link>
 
         {/* User menu */}
         <div className="relative" ref={menuRef}>
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
-            className="flex items-center gap-2 h-8 pl-2 pr-2.5 rounded-lg hover:bg-white/5 transition-colors"
+            className="flex items-center gap-1.5 h-8 pl-2 pr-2 rounded-lg hover:bg-white/5 transition-colors min-h-[44px]"
           >
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
               A
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden sm:block" />
           </button>
 
           {userMenuOpen && (

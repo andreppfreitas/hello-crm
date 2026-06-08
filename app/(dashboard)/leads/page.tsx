@@ -1,6 +1,7 @@
 "use client";
 
 import { useCRM } from "@/contexts/CRMContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
 import { StageBadge } from "@/components/shared/StageBadge";
 import { formatDate, initials } from "@/lib/utils";
@@ -163,17 +164,18 @@ function BulkBar({
       initial={{ y: 80, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: 80, opacity: 0 }}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-card border border-border rounded-2xl px-5 py-3 shadow-2xl"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 md:gap-3 bg-card border border-border rounded-2xl px-3 md:px-5 py-3 shadow-2xl max-w-[calc(100vw-2rem)]"
     >
-      <span className="text-sm font-medium text-foreground mr-2">
+      <span className="text-sm font-medium text-foreground mr-1 md:mr-2 whitespace-nowrap">
         <CheckSquare className="w-4 h-4 inline mr-1.5 text-primary" />
-        {count} selecionados
+        {count}
       </span>
 
       {/* Change Stage */}
       <div className="relative">
         <Button variant="outline" size="sm" onClick={() => { setShowStage((v) => !v); setShowConsultant(false); }} className="gap-1.5 text-xs">
-          <ArrowRight className="w-3.5 h-3.5" /> Mudar estágio
+          <ArrowRight className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Mudar estágio</span>
         </Button>
         <AnimatePresence>
           {showStage && (
@@ -202,7 +204,8 @@ function BulkBar({
       {/* Assign consultant */}
       <div className="relative">
         <Button variant="outline" size="sm" onClick={() => { setShowConsultant((v) => !v); setShowStage(false); }} className="gap-1.5 text-xs">
-          <Users className="w-3.5 h-3.5" /> Atribuir
+          <Users className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Atribuir</span>
         </Button>
         <AnimatePresence>
           {showConsultant && (
@@ -223,7 +226,7 @@ function BulkBar({
       </div>
 
       <Button variant="ghost" size="sm" onClick={onDelete} className="gap-1.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10">
-        <Trash2 className="w-3.5 h-3.5" /> Deletar
+        <Trash2 className="w-3.5 h-3.5" />
       </Button>
 
       <button onClick={onClear} className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground ml-1">
@@ -237,6 +240,7 @@ function BulkBar({
 
 function LeadsInner() {
   const { leads, updateLead, removeLead } = useCRM();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
   const [showFilters, setShowFilters] = useState(false);
@@ -251,12 +255,11 @@ function LeadsInner() {
 
   const scored = useMemo(() => leads.map((l) => ({ ...l, score: computeScore(l) })), [leads]);
 
-  // Collapse grouped leads: only show the primary; members are hidden
   const deduped = useMemo(() => {
     return scored.filter((l) => {
-      if (!l.groupId) return true;          // ungrouped — always show
-      if (l.groupRole === "primary") return true;  // primary — show
-      return false;                         // member — hide
+      if (!l.groupId) return true;
+      if (l.groupRole === "primary") return true;
+      return false;
     });
   }, [scored]);
 
@@ -281,7 +284,6 @@ function LeadsInner() {
   }, [scored, search, filterTemp, filterStage, filterConsultant, filterCity, filterCourse, sortField, sortDir]);
 
   const activeFilters = [filterTemp, filterStage, filterConsultant, filterCity, filterCourse].filter(Boolean).length;
-
   const allSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
 
   function toggleAll() {
@@ -341,18 +343,18 @@ function LeadsInner() {
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[160px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Buscar leads..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-secondary/50" />
+          <Input placeholder={t("search")} value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 bg-secondary/50" />
         </div>
-        <Button variant="outline" size="sm" onClick={() => setShowFilters((v) => !v)} className={cn("gap-2", activeFilters > 0 && "border-primary text-primary")}>
+        <Button variant="outline" size="sm" onClick={() => setShowFilters((v) => !v)} className={cn("gap-2 min-h-[44px]", activeFilters > 0 && "border-primary text-primary")}>
           <SlidersHorizontal className="w-4 h-4" />
-          Filtros
+          <span className="hidden sm:inline">{t("filter")}</span>
           {activeFilters > 0 && <span className="bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">{activeFilters}</span>}
         </Button>
-        <Link href="/import" className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
-          Importar CSV
+        <Link href="/import" className="inline-flex items-center gap-1.5 h-11 px-3 rounded-lg text-xs font-medium border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
+          {t("import")}
         </Link>
         <p className="text-sm text-muted-foreground ml-auto">{leads.length} leads</p>
       </div>
@@ -363,10 +365,10 @@ function LeadsInner() {
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
             <div className="glass-card rounded-xl p-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-5">
               <select value={filterTemp} onChange={(e) => setFilterTemp(e.target.value as LeadTemperature | "")} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-                <option value="">Temperatura</option>
-                <option value="hot">🔥 Hot</option>
-                <option value="warm">☀️ Warm</option>
-                <option value="cold">❄️ Cold</option>
+                <option value="">{t("temperature")}</option>
+                <option value="hot">🔥 {t("hot")}</option>
+                <option value="warm">☀️ {t("warm")}</option>
+                <option value="cold">❄️ {t("cold")}</option>
               </select>
               <select value={filterStage} onChange={(e) => setFilterStage(e.target.value as PipelineStage | "")} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
                 <option value="">Todos os estágios</option>
@@ -377,16 +379,16 @@ function LeadsInner() {
                 ))}
               </select>
               <select value={filterConsultant} onChange={(e) => setFilterConsultant(e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-                <option value="">Consultor</option>
+                <option value="">{t("consultant")}</option>
                 {CONSULTANTS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
               <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-                <option value="">Cidade</option>
+                <option value="">{t("city")}</option>
                 {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
               <div className="flex gap-2">
                 <select value={filterCourse} onChange={(e) => setFilterCourse(e.target.value)} className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-                  <option value="">Curso</option>
+                  <option value="">{t("course")}</option>
                   {["ELICOS", "VET", "Bachelor", "Master", "Foundation", "Professional Year"].map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
                 {activeFilters > 0 && (
@@ -400,8 +402,71 @@ function LeadsInner() {
         )}
       </AnimatePresence>
 
-      {/* Table */}
-      <div className="glass-card rounded-xl overflow-hidden">
+      {/* Mobile card view (< md) */}
+      <div className="md:hidden space-y-2">
+        {filtered.length === 0 && (
+          <div className="glass-card rounded-xl p-8 text-center text-muted-foreground text-sm">{t("noLeadsFound")}</div>
+        )}
+        {filtered.map((lead) => {
+          const groupMembers = lead.groupId
+            ? leads.filter((l) => l.groupId === lead.groupId && l.id !== lead.id)
+            : [];
+          return (
+            <div key={lead.id} className={cn("glass-card rounded-xl p-4 space-y-3", selected.has(lead.id) && "ring-1 ring-primary/40")}>
+              <div className="flex items-center gap-3">
+                <input type="checkbox" checked={selected.has(lead.id)} onChange={() => toggleOne(lead.id)} className="w-4 h-4 rounded accent-primary cursor-pointer flex-shrink-0" />
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+                  {initials(lead.fullName)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <Link href={`/leads/${lead.id}`}>
+                    <p className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors">{lead.fullName}</p>
+                  </Link>
+                  {groupMembers.length > 0 && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {lead.groupType === "couple" ? "👫" : "👨‍👩‍👧"} {groupMembers.map((m) => m.fullName.split(" ")[0]).join(", ")}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <TemperatureBadge temp={lead.temperature} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
+                <span className="truncate max-w-[140px]">{lead.courseInterest || "—"}</span>
+                <span>·</span>
+                <StageBadge stage={lead.stage} />
+              </div>
+
+              {lead.visaExpiryDate && (() => {
+                const days = Math.ceil((new Date(lead.visaExpiryDate).getTime() - Date.now()) / 86400000);
+                return (
+                  <p className={cn("text-xs font-medium", days < 0 ? "text-red-400" : days <= 30 ? "text-amber-400" : "text-muted-foreground")}>
+                    {t("visaExpiry")}: {lead.visaExpiryDate.split("-").reverse().join("/")}
+                    {days < 0 ? ` (${t("expired")})` : ` (${days}d)`}
+                  </p>
+                );
+              })()}
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground">{formatDate(lead.createdAt)}</span>
+                <div className="flex items-center gap-1">
+                  <Link href={`/leads/${lead.id}`}>
+                    <Button variant="ghost" size="icon" className="w-8 h-8"><Eye className="w-3.5 h-3.5" /></Button>
+                  </Link>
+                  <Button variant="ghost" size="icon" className="w-8 h-8 text-destructive" onClick={() => handleDelete(lead)}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table view (md+) */}
+      <div className="hidden md:block glass-card rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="border-b border-border">
@@ -414,19 +479,19 @@ function LeadsInner() {
                     className="w-4 h-4 rounded accent-primary cursor-pointer"
                   />
                 </th>
-                <SortTh field="fullName" label="Nome" />
-                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Vencimento Visto</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Celular</th>
+                <SortTh field="fullName" label={t("name")} />
+                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("visaExpiry")}</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("phone")}</th>
                 <SortTh field="temperature" label="Temp" />
-                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estágio</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Curso</th>
-                <SortTh field="createdAt" label="Criado" />
+                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("stage")}</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("course")}</th>
+                <SortTh field="createdAt" label={t("created")} />
                 <th className="px-3 py-3 w-16" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground text-sm">Nenhum lead encontrado.</td></tr>
+                <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground text-sm">{t("noLeadsFound")}</td></tr>
               )}
               {filtered.map((lead) => {
                 const groupMembers = lead.groupId
@@ -471,7 +536,7 @@ function LeadsInner() {
                             "text-[10px]",
                             days < 0 ? "text-red-400/70" : days <= 30 ? "text-amber-400/70" : "text-muted-foreground"
                           )}>
-                            {days < 0 ? `Vencido ${Math.abs(days)}d` : days === 0 ? "Vence hoje!" : `${days}d restantes`}
+                            {days < 0 ? `${t("expired")} ${Math.abs(days)}d` : days === 0 ? "Hoje!" : `${days}d`}
                           </span>
                         </div>
                       );
@@ -486,7 +551,7 @@ function LeadsInner() {
                     <EditableTemp lead={lead} onSave={(v) => { updateLead(lead.id, { temperature: v }); toast.success("Temperatura atualizada"); }} />
                   </td>
                   <td className="px-3 py-3">
-                    <EditableStage lead={lead} onSave={(v) => { updateLead(lead.id, { stage: v }); toast.success(`Estágio: ${STAGE_CONFIG[v].label}`); }} />
+                    <EditableStage lead={lead} onSave={(v) => { updateLead(lead.id, { stage: v }); toast.success(`${t("stage")}: ${STAGE_CONFIG[v].label}`); }} />
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground max-w-[120px] truncate">{lead.courseInterest}</td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">{formatDate(lead.createdAt)}</td>

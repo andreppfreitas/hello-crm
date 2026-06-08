@@ -1,6 +1,7 @@
 "use client";
 
 import { useCRM } from "@/contexts/CRMContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { StatCard } from "@/components/shared/StatCard";
 import { StageBadge } from "@/components/shared/StageBadge";
 import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
@@ -20,6 +21,7 @@ const COLORS = ["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#f43f5e", "#06b6d4"
 
 export default function DashboardPage() {
   const { stats, leads } = useCRM();
+  const { t } = useLanguage();
 
   const cityData = CITIES.map((city) => ({
     city,
@@ -64,12 +66,12 @@ export default function DashboardPage() {
         <div className="space-y-3">
           {visaAlerts.length > 0 && (
             <div className="glass-card rounded-xl p-4 border border-amber-500/30 bg-amber-500/5">
-              <p className="text-sm font-semibold text-amber-400 mb-2">⚠️ {visaAlerts.length} lead(s) com visto vencendo em breve</p>
+              <p className="text-sm font-semibold text-amber-400 mb-2">⚠️ {visaAlerts.length} lead(s) {t("visaExpiringSoon").toLowerCase()}</p>
               <div className="flex flex-wrap gap-2">
                 {visaAlerts.map((l) => (
                   <Link key={l.id} href={`/leads/${l.id}`}>
                     <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-colors">
-                      {l.fullName.split(" ")[0]} ({l.daysLeft < 0 ? `vencido há ${Math.abs(l.daysLeft)}d` : `${l.daysLeft}d`})
+                      {l.fullName.split(" ")[0]} ({l.daysLeft < 0 ? `${t("expired")} ${Math.abs(l.daysLeft)}d` : `${l.daysLeft}d`})
                     </span>
                   </Link>
                 ))}
@@ -78,7 +80,7 @@ export default function DashboardPage() {
           )}
           {forgottenLeads.length > 0 && (
             <div className="glass-card rounded-xl p-4 border border-blue-500/30 bg-blue-500/5">
-              <p className="text-sm font-semibold text-blue-400 mb-2">💤 {forgottenLeads.length} lead(s) sem contato há +7 dias</p>
+              <p className="text-sm font-semibold text-blue-400 mb-2">💤 {forgottenLeads.length} lead(s) {t("forgottenLeads").toLowerCase()}</p>
               <div className="flex flex-wrap gap-2">
                 {forgottenLeads.slice(0, 10).map((l) => (
                   <Link key={l.id} href={`/leads/${l.id}`}>
@@ -88,7 +90,7 @@ export default function DashboardPage() {
                   </Link>
                 ))}
                 {forgottenLeads.length > 10 && (
-                  <span className="text-xs px-2.5 py-1 text-muted-foreground">+{forgottenLeads.length - 10} mais</span>
+                  <span className="text-xs px-2.5 py-1 text-muted-foreground">+{forgottenLeads.length - 10}</span>
                 )}
               </div>
             </div>
@@ -96,16 +98,16 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-3 gap-4 xl:grid-cols-5">
-        <StatCard title="Total Leads" value={stats.total} icon={Users} iconColor="text-blue-400" />
-        <StatCard title="Hot Leads" value={stats.hot} icon={Flame} iconColor="text-red-400" />
-        <StatCard title="Waiting Reply" value={stats.waitingReply} icon={MessageSquare} iconColor="text-orange-400" />
-        <StatCard title="Meetings" value={stats.meetingsScheduled} icon={Calendar} iconColor="text-violet-400" />
+      {/* KPI Grid — responsive */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4">
+        <StatCard title={t("totalLeads")} value={stats.total} icon={Users} iconColor="text-blue-400" />
+        <StatCard title={t("hotLeads")} value={stats.hot} icon={Flame} iconColor="text-red-400" />
+        <StatCard title={t("waitingReply")} value={stats.waitingReply} icon={MessageSquare} iconColor="text-orange-400" />
+        <StatCard title={t("meetingsScheduled")} value={stats.meetingsScheduled} icon={Calendar} iconColor="text-violet-400" />
         <StatCard title="In Enrollment" value={stats.applicationsInProgress} icon={FileText} iconColor="text-purple-400" />
         <StatCard title="Payments Pending" value={stats.paymentsPending} icon={CreditCard} iconColor="text-yellow-400" />
         <StatCard title="Visa Pending" value={stats.visaPending} icon={Globe} iconColor="text-cyan-400" />
-        <StatCard title="Closed Won" value={stats.closedWon} icon={Trophy} iconColor="text-emerald-400" />
+        <StatCard title={t("closedWon")} value={stats.closedWon} icon={Trophy} iconColor="text-emerald-400" />
         <StatCard title="Closed Lost" value={stats.closedLost} icon={XCircle} iconColor="text-red-400" />
       </div>
 
@@ -159,9 +161,9 @@ export default function DashboardPage() {
 
         {/* Hot leads */}
         <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Hot Leads</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">{t("hotLeads")}</h3>
           <div className="space-y-2">
-            {hotLeads.length === 0 && <p className="text-sm text-muted-foreground">No hot leads right now.</p>}
+            {hotLeads.length === 0 && <p className="text-sm text-muted-foreground">{t("noLeadsFound")}</p>}
             {hotLeads.map((lead) => (
               <Link key={lead.id} href={`/leads/${lead.id}`}>
                 <div className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer">

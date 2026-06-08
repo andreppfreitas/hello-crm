@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
   Users,
@@ -12,10 +12,10 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  GraduationCap,
   Bell,
   Sparkles,
   Upload,
+  X,
 } from "lucide-react";
 import { useCRM } from "@/contexts/CRMContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -23,7 +23,12 @@ import { isOverdue } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const { reminders } = useCRM();
@@ -43,16 +48,11 @@ export function Sidebar() {
   const overdueCount = reminders.filter((r) => !r.completed && isOverdue(r.dueAt)).length;
   const pendingCount = reminders.filter((r) => !r.completed).length;
 
-  return (
-    <motion.aside
-      animate={{ width: collapsed ? 72 : 240 }}
-      transition={{ duration: 0.2, ease: "easeInOut" }}
-      className="relative flex flex-col h-full bg-sidebar border-r border-sidebar-border overflow-hidden flex-shrink-0"
-    >
+  const navContent = (isCollapsed: boolean) => (
+    <>
       {/* Logo */}
       <div className="flex items-center gap-3 px-4 py-4 border-b border-sidebar-border min-w-0">
-        {collapsed ? (
-          /* Collapsed: just the gold H icon */
+        {isCollapsed ? (
           <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-sm font-black text-primary-foreground">H</span>
           </div>
@@ -71,7 +71,7 @@ export function Sidebar() {
           const activeNew = href === "/leads/new" && pathname === "/leads/new";
           const isActive = href === "/leads/new" ? activeNew : active;
           return (
-            <Link key={href} href={href}>
+            <Link key={href} href={href} onClick={onMobileClose}>
               <div className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors relative",
                 isActive
@@ -96,7 +96,7 @@ export function Sidebar() {
                     </span>
                   )}
                 </div>
-                {!collapsed && (
+                {!isCollapsed && (
                   <motion.span
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -106,7 +106,7 @@ export function Sidebar() {
                     {label}
                   </motion.span>
                 )}
-                {!collapsed && badge && pendingCount > 0 && (
+                {!isCollapsed && badge && pendingCount > 0 && (
                   <span className={cn(
                     "text-[10px] font-bold px-1.5 py-0.5 rounded-full relative z-10",
                     overdueCount > 0 ? "bg-red-500/20 text-red-400" : "bg-primary/15 text-primary"
@@ -119,14 +119,61 @@ export function Sidebar() {
           );
         })}
       </nav>
+    </>
+  );
 
-      {/* Collapse toggle */}
-      <button
-        onClick={() => setCollapsed((c) => !c)}
-        className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-sidebar border border-sidebar-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-50"
+  return (
+    <>
+      {/* ── MOBILE: overlay drawer ── */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+              onClick={onMobileClose}
+            />
+            {/* Drawer */}
+            <motion.aside
+              initial={{ x: -280 }}
+              animate={{ x: 0 }}
+              exit={{ x: -280 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+              className="fixed left-0 top-0 bottom-0 w-64 flex flex-col bg-sidebar border-r border-sidebar-border z-50 lg:hidden"
+            >
+              {/* Close button */}
+              <button
+                onClick={onMobileClose}
+                className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors z-10"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              {navContent(false)}
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── DESKTOP: static sidebar ── */}
+      <motion.aside
+        animate={{ width: collapsed ? 72 : 240 }}
+        transition={{ duration: 0.2, ease: "easeInOut" }}
+        className="relative hidden lg:flex flex-col h-full bg-sidebar border-r border-sidebar-border overflow-hidden flex-shrink-0"
       >
-        {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
-      </button>
-    </motion.aside>
+        {navContent(collapsed)}
+
+        {/* Collapse toggle — desktop only */}
+        <button
+          onClick={() => setCollapsed((c) => !c)}
+          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-sidebar border border-sidebar-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors z-50"
+        >
+          {collapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+        </button>
+      </motion.aside>
+    </>
   );
 }

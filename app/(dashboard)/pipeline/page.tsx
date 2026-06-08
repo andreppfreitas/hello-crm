@@ -220,7 +220,7 @@ export default function PipelinePage() {
   }
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 h-full scrollbar-thin">
+    <div className="flex gap-4 overflow-x-auto pb-4 h-full scrollbar-thin touch-pan-x select-none">
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
@@ -278,7 +278,7 @@ export default function PipelinePage() {
                 })()}
                 {phaseLeads.length === 0 && !activeId && (
                   <div className="border-2 border-dashed border-border/40 rounded-xl h-12 flex items-center justify-center">
-                    <p className="text-xs text-muted-foreground/60">Nenhum lead</p>
+                    <p className="text-xs text-muted-foreground/60">No leads</p>
                   </div>
                 )}
               </div>
