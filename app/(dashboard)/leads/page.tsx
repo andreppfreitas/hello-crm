@@ -251,14 +251,12 @@ function LeadsInner() {
 
   const scored = useMemo(() => leads.map((l) => ({ ...l, score: computeScore(l) })), [leads]);
 
-  // Collapse grouped leads: only show primary (or first member) per group
+  // Collapse grouped leads: only show the primary; members are hidden
   const deduped = useMemo(() => {
-    const seenGroups = new Set<string>();
     return scored.filter((l) => {
-      if (!l.groupId) return true;
-      if (seenGroups.has(l.groupId)) return false;
-      seenGroups.add(l.groupId);
-      return true;
+      if (!l.groupId) return true;          // ungrouped — always show
+      if (l.groupRole === "primary") return true;  // primary — show
+      return false;                         // member — hide
     });
   }, [scored]);
 
@@ -433,7 +431,7 @@ function LeadsInner() {
               )}
               {filtered.map((lead) => {
                 const groupMembers = lead.groupId
-                  ? scored.filter((l) => l.groupId === lead.groupId && l.id !== lead.id)
+                  ? leads.filter((l) => l.groupId === lead.groupId && l.id !== lead.id)
                   : [];
                 const groupLabel = lead.groupType === "couple" ? "👫" : "👨‍👩‍👧";
                 return (

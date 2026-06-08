@@ -231,20 +231,19 @@ export default function PipelinePage() {
                 </div>
               </div>
 
-              {/* Cards — hide non-primary group members */}
+              {/* Cards — only show group primaries; members are hidden */}
               <div className="flex flex-col gap-2 min-h-[60px] p-1">
                 {(() => {
-                  const seenGroups = new Set<string>();
                   return phaseLeads.filter((l) => {
-                    if (!l.groupId) return true;
-                    if (seenGroups.has(l.groupId)) return false;
-                    seenGroups.add(l.groupId);
+                    // Non-primary group members are never shown as cards
+                    if (l.groupId && l.groupRole === "member") return false;
                     return true;
                   }).map((lead) => {
-                    const partners = lead.groupId
-                      ? phaseLeads.filter((l) => l.groupId === lead.groupId && l.id !== lead.id)
+                    // Show ALL group members' first names (regardless of their stage)
+                    const groupPartners = lead.groupId
+                      ? leads.filter((l) => l.groupId === lead.groupId && l.id !== lead.id)
                       : [];
-                    const partnerName = partners.map((p) => p.fullName.split(" ")[0]).join(", ");
+                    const partnerName = groupPartners.map((p) => p.fullName.split(" ")[0]).join(", ");
                     return (
                       <DraggableCard
                         key={lead.id}

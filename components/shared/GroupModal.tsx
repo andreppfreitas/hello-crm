@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Search, Users, Heart, X, Link2, Unlink } from "lucide-react";
+import { Search, Users, Heart, X, Link2, Unlink, Crown, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,16 +21,25 @@ const GROUP_TYPES = [
   { id: "family" as const, label: "Família", icon: Users,  emoji: "👨‍👩‍👧", desc: "Três ou mais membros da família" },
 ];
 
+type Step = "select" | "primary" | "done";
+
 export function GroupModal({ lead, open, onOpenChange }: Props) {
   const { leads, updateLead } = useCRM();
-  const [search, setSearch] = useState("");
+  const [search, setSearch]     = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [groupType, setGroupType] = useState<"couple" | "family">("couple");
-  const [step, setStep] = useState<"select" | "confirm">("select");
+  const [primaryId, setPrimaryId] = useState<string>(lead.id);
+  const [step, setStep]           = useState<Step>("select");
 
   const isGrouped = !!lead.groupId;
 
-  // Available leads to link (not already grouped with this lead, not self)
+  // All current group members (including self)
+  const groupMembers = useMemo(() =>
+    lead.groupId ? leads.filter((l) => l.groupId === lead.groupId) : [],
+    [leads, lead.groupId]
+  );
+
+  // Available leads to link
   const candidates = useMemo(() =>
     leads.filter((l) =>
       l.id !== lead.id &&
@@ -40,32 +49,43 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
     [leads, lead.id, lead.groupId, search]
   );
 
-  // Current group members
-  const groupMembers = useMemo(() =>
-    lead.groupId ? leads.filter((l) => l.groupId === lead.groupId && l.id !== lead.id) : [],
-    [leads, lead.groupId]
+  // All leads that will be in the new group
+  const allNewMembers = useMemo(() =>
+    [lead, ...selected.map((id) => leads.find((l) => l.id === id)!).filter(Boolean)],
+    [lead, selected, leads]
   );
 
+  function reset() {
+    setSearch(""); setSelected([]); setGroupType("couple");
+    setPrimaryId(lead.id); setStep("select");
+  }
+
   function handleLink() {
-    const groupId = `grp-${Date.now()}`;
-    const allIds = [lead.id, ...selected];
-    // Determine primary = current lead
-    allIds.forEach((id, i) => {
+    const groupId = lead.groupId ?? `grp-${Date.now()}`;
+    const allIds = allNewMembers.map((l) => l.id);
+    allIds.forEach((id) => {
       updateLead(id, {
         groupId,
         groupType,
-        groupRole: i === 0 ? "primary" : "member",
+        groupRole: id === primaryId ? "primary" : "member",
       });
     });
-    toast.success(`Grupo "${GROUP_TYPES.find(g => g.id === groupType)?.label}" criado com sucesso!`);
+    const primaryName = allNewMembers.find((l) => l.id === primaryId)?.fullName ?? "";
+    toast.success(`Grupo criado! Estudante principal: ${primaryName}`);
     onOpenChange(false);
-    setSelected([]);
-    setStep("select");
-    setSearch("");
+    reset();
+  }
+
+  function handleSetPrimary(id: string) {
+    // Change primary within existing group
+    const allMembers = leads.filter((l) => l.groupId === lead.groupId);
+    allMembers.forEach((l) => {
+      updateLead(l.id, { groupRole: l.id === id ? "primary" : "member" });
+    });
+    toast.success("Estudante principal atualizado!");
   }
 
   function handleUnlink() {
-    // Remove all from group
     const allMembers = leads.filter((l) => l.groupId === lead.groupId);
     allMembers.forEach((l) => {
       updateLead(l.id, { groupId: undefined, groupType: undefined, groupRole: undefined });
@@ -81,10 +101,11 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={(v) => { if (!v) reset(); onOpenChange(v); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
         <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg z-50 glass-card rounded-2xl border border-border shadow-2xl p-0 overflow-hidden">
+
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-border">
             <div className="flex items-center gap-2">
@@ -99,25 +120,34 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
           </div>
 
           <div className="p-6 space-y-5">
-            {/* Already grouped — show members + unlink option */}
+
+            {/* ── ALREADY GROUPED ── */}
             {isGrouped ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{lead.groupType === "couple" ? "👫" : "👨‍👩‍👧"}</span>
                   <div>
                     <p className="font-medium text-sm">{lead.groupType === "couple" ? "Casal" : "Família"}</p>
-                    <p className="text-xs text-muted-foreground">{groupMembers.length + 1} membros neste grupo</p>
+                    <p className="text-xs text-muted-foreground">{groupMembers.length} membros neste grupo</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  {/* Current lead */}
-                  <MemberRow lead={lead} role="primary" />
-                  {/* Other members */}
-                  {groupMembers.map((m) => <MemberRow key={m.id} lead={m} role="member" />)}
+                  {groupMembers.map((m) => (
+                    <MemberRow
+                      key={m.id}
+                      lead={m}
+                      isPrimary={m.groupRole === "primary"}
+                      onSetPrimary={m.groupRole !== "primary" ? () => handleSetPrimary(m.id) : undefined}
+                    />
+                  ))}
                 </div>
 
-                <div className="pt-2 flex gap-3">
+                <p className="text-xs text-muted-foreground bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2">
+                  💡 Clique em <strong>"Tornar principal"</strong> para trocar o estudante que rege o pipeline
+                </p>
+
+                <div className="pt-1 flex gap-3">
                   <Button
                     variant="outline"
                     className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10"
@@ -131,9 +161,11 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
                   </Dialog.Close>
                 </div>
               </div>
-            ) : (
+
+            ) : step === "select" ? (
+              /* ── STEP 1: SELECT TYPE + MEMBERS ── */
               <>
-                {/* Step 1: Select type */}
+                {/* Type */}
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tipo de grupo</p>
                   <div className="grid grid-cols-2 gap-3">
@@ -156,7 +188,7 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
                   </div>
                 </div>
 
-                {/* Step 2: Search and select leads */}
+                {/* Search */}
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Selecionar {groupType === "couple" ? "parceiro(a)" : "membros da família"}
@@ -171,7 +203,7 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
                     />
                   </div>
 
-                  <div className="max-h-52 overflow-y-auto space-y-1 scrollbar-thin">
+                  <div className="max-h-48 overflow-y-auto space-y-1 scrollbar-thin">
                     {candidates.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">Nenhuma lead encontrada</p>
                     )}
@@ -203,7 +235,7 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
                   </div>
                 </div>
 
-                {/* Selected preview */}
+                {/* Preview */}
                 {selected.length > 0 && (
                   <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 text-sm">
                     <span className="font-medium">{lead.fullName}</span>
@@ -220,12 +252,70 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
                     <Button variant="outline" className="flex-1">Cancelar</Button>
                   </Dialog.Close>
                   <Button
-                    onClick={handleLink}
+                    onClick={() => { setPrimaryId(lead.id); setStep("primary"); }}
                     disabled={selected.length === 0}
                     className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                   >
+                    Próximo: Escolher principal
+                    <ChevronRight className="w-4 h-4 ml-1.5" />
+                  </Button>
+                </div>
+              </>
+
+            ) : (
+              /* ── STEP 2: CHOOSE PRIMARY ── */
+              <>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-amber-400" />
+                    <p className="text-sm font-semibold">Quem é o estudante principal?</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    O pipeline e os acompanhamentos serão regidos pelo estudante principal. Os outros membros ficam vinculados mas não aparecem como cards separados.
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  {allNewMembers.map((m) => (
+                    <button
+                      key={m.id}
+                      onClick={() => setPrimaryId(m.id)}
+                      className={cn(
+                        "w-full flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left",
+                        primaryId === m.id
+                          ? "border-amber-400 bg-amber-400/10"
+                          : "border-border hover:border-foreground/30"
+                      )}
+                    >
+                      <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+                        {m.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("")}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{m.fullName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{m.email || m.phone || m.courseInterest}</p>
+                      </div>
+                      {primaryId === m.id ? (
+                        <div className="flex items-center gap-1.5 text-amber-400">
+                          <Crown className="w-4 h-4" />
+                          <span className="text-xs font-semibold">Principal</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Vinculado</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex gap-3 pt-1">
+                  <Button variant="outline" className="flex-1" onClick={() => setStep("select")}>
+                    Voltar
+                  </Button>
+                  <Button
+                    onClick={handleLink}
+                    className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
                     <Link2 className="w-4 h-4 mr-2" />
-                    Vincular
+                    Vincular grupo
                   </Button>
                 </div>
               </>
@@ -237,18 +327,41 @@ export function GroupModal({ lead, open, onOpenChange }: Props) {
   );
 }
 
-function MemberRow({ lead, role }: { lead: Lead; role: "primary" | "member" }) {
+function MemberRow({
+  lead,
+  isPrimary,
+  onSetPrimary,
+}: {
+  lead: Lead;
+  isPrimary: boolean;
+  onSetPrimary?: () => void;
+}) {
   return (
-    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-secondary/30">
+    <div className={cn(
+      "flex items-center gap-3 p-2.5 rounded-lg border transition-all",
+      isPrimary ? "bg-amber-400/10 border-amber-400/30" : "bg-secondary/30 border-border"
+    )}>
       <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
         {lead.fullName.split(" ").map((w) => w[0]).slice(0, 2).join("")}
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <p className="text-sm font-medium">{lead.fullName}</p>
         <p className="text-xs text-muted-foreground">{lead.email || lead.phone}</p>
       </div>
-      {role === "primary" && (
-        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/15 text-primary">Principal</span>
+      {isPrimary ? (
+        <div className="flex items-center gap-1 text-amber-400">
+          <Crown className="w-3.5 h-3.5" />
+          <span className="text-xs font-semibold">Principal</span>
+        </div>
+      ) : onSetPrimary ? (
+        <button
+          onClick={onSetPrimary}
+          className="text-xs text-primary hover:underline whitespace-nowrap"
+        >
+          Tornar principal
+        </button>
+      ) : (
+        <span className="text-xs text-muted-foreground">Vinculado</span>
       )}
     </div>
   );
