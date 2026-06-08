@@ -82,24 +82,33 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
   return { headers, rows };
 }
 
+function normalize(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+}
+
 function guessMapping(header: string): FieldKey {
-  const h = header.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); // strip accents
-  if (h.includes("consul")) return "assignedConsultant";
-  if (h.includes("nome") || h.includes("name")) return "fullName";
-  if (h.includes("fone") || h.includes("phone") || h.includes("whats") || h.includes("tel")) return "phone";
-  if (h.includes("email") || h.includes("e-mail")) return "email";
-  if (h.includes("pais") || h.includes("country") || h.includes("origem") && h.includes("pais")) return "country";
-  if (h.includes("localizacao") || h.includes("location") || h.includes("cidade atual") || h.includes("onde mora")) return "currentLocation";
-  if (h.includes("curso") || h.includes("course") || h.includes("interesse")) return "courseInterest";
-  if (h.includes("cidade") || h.includes("city")) return "preferredCity";
-  if (h.includes("budget") || h.includes("orcamento") || h.includes("valor")) return "budget";
-  if (h.includes("fonte") || h.includes("source") || h.includes("origem")) return "source";
-  if (h.includes("temp")) return "temperature";
-  if (h.includes("vencimento") || h.includes("expir") || h.includes("validade")) return "visaExpiryDate";
-  if (h.includes("tipo") && h.includes("visto")) return "currentVisaType";
+  const h = normalize(header);
+  // Visa / offshore — check BEFORE generic matches to avoid false positives
+  if ((h.includes("tipo") || h.includes("type")) && (h.includes("visto") || h.includes("visa"))) return "currentVisaType";
+  if (h.includes("vencimento") || h.includes("expir") || h.includes("validade") || h.includes("vencto")) return "visaExpiryDate";
+  if (h.includes("offshore") || h.includes("fora do pais") || h.includes("fora do brasil") || (h.includes("sim") && h.includes("nao"))) return "isOffshore";
   if (h.includes("visto") || h.includes("visa")) return "currentVisaType";
-  if (h.includes("offshore") || h.includes("fora do pais") || h.includes("australia")) return "isOffshore";
-  if (h.includes("nota") || h.includes("note") || h.includes("obs")) return "notes";
+  // Consultant BEFORE notes/obs
+  if (h.includes("consul")) return "assignedConsultant";
+  // Personal
+  if (h.includes("nome") || h.includes("name")) return "fullName";
+  if (h.includes("fone") || h.includes("phone") || h.includes("whats") || h.includes("tel") || h.includes("celular")) return "phone";
+  if (h.includes("email") || h.includes("e-mail") || h.includes("mail")) return "email";
+  if (h.includes("pais") || h.includes("country") || h.includes("nacionalidade")) return "country";
+  if (h.includes("localizacao") || h.includes("location") || h.includes("onde mora") || h.includes("cidade atual") || h.includes("endereco")) return "currentLocation";
+  // Course
+  if (h.includes("curso") || h.includes("course") || h.includes("interesse")) return "courseInterest";
+  if (h.includes("cidade") || h.includes("city") || h.includes("preferida")) return "preferredCity";
+  if (h.includes("budget") || h.includes("orcamento") || h.includes("valor") || h.includes("investimento")) return "budget";
+  // CRM
+  if (h.includes("origem") || h.includes("fonte") || h.includes("source") || h.includes("canal")) return "source";
+  if (h.includes("temp")) return "temperature";
+  if (h.includes("nota") || h.includes("note") || h.includes("obs") || h.includes("comentario") || h.includes("comment")) return "notes";
   return "skip";
 }
 
