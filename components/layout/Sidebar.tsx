@@ -59,7 +59,7 @@ export function Sidebar() {
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="min-w-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/hello-logo.png" alt="Hello Australia" className="h-10 w-auto" />
+            <img src="/hello-logo.png" alt="Hello Australia" className="h-14 w-auto" />
           </motion.div>
         )}
       </div>
