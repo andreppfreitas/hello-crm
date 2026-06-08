@@ -415,19 +415,18 @@ function LeadsInner() {
                   />
                 </th>
                 <SortTh field="fullName" label="Nome" />
-                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Contato</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Vencimento Visto</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Celular</th>
                 <SortTh field="temperature" label="Temp" />
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Estágio</th>
-                <SortTh field="score" label="Score" />
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Curso</th>
-                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Consultor</th>
                 <SortTh field="createdAt" label="Criado" />
                 <th className="px-3 py-3 w-16" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 && (
-                <tr><td colSpan={10} className="px-4 py-12 text-center text-muted-foreground text-sm">Nenhum lead encontrado.</td></tr>
+                <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground text-sm">Nenhum lead encontrado.</td></tr>
               )}
               {filtered.map((lead) => {
                 const groupMembers = lead.groupId
@@ -457,9 +456,31 @@ function LeadsInner() {
                       </div>
                     </div>
                   </td>
+                  <td className="px-3 py-3">
+                    {lead.visaExpiryDate ? (() => {
+                      const days = Math.ceil((new Date(lead.visaExpiryDate).getTime() - Date.now()) / 86400000);
+                      return (
+                        <div className="flex flex-col gap-0.5">
+                          <span className={cn(
+                            "text-xs font-medium",
+                            days < 0 ? "text-red-400" : days <= 30 ? "text-amber-400" : "text-emerald-400"
+                          )}>
+                            {lead.visaExpiryDate.split("-").reverse().join("/")}
+                          </span>
+                          <span className={cn(
+                            "text-[10px]",
+                            days < 0 ? "text-red-400/70" : days <= 30 ? "text-amber-400/70" : "text-muted-foreground"
+                          )}>
+                            {days < 0 ? `Vencido ${Math.abs(days)}d` : days === 0 ? "Vence hoje!" : `${days}d restantes`}
+                          </span>
+                        </div>
+                      );
+                    })() : (
+                      <span className="text-xs text-muted-foreground/40">—</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">
                     <div>{lead.phone}</div>
-                    <div className="opacity-70">{lead.email}</div>
                   </td>
                   <td className="px-3 py-3">
                     <EditableTemp lead={lead} onSave={(v) => { updateLead(lead.id, { temperature: v }); toast.success("Temperatura atualizada"); }} />
@@ -467,9 +488,7 @@ function LeadsInner() {
                   <td className="px-3 py-3">
                     <EditableStage lead={lead} onSave={(v) => { updateLead(lead.id, { stage: v }); toast.success(`Estágio: ${STAGE_CONFIG[v].label}`); }} />
                   </td>
-                  <td className="px-3 py-3"><ScoreBadge score={lead.score ?? 0} /></td>
                   <td className="px-3 py-3 text-xs text-muted-foreground max-w-[120px] truncate">{lead.courseInterest}</td>
-                  <td className="px-3 py-3 text-xs text-muted-foreground">{lead.assignedConsultant.split(" ")[0]}</td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">{formatDate(lead.createdAt)}</td>
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

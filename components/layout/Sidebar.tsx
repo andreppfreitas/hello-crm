@@ -50,14 +50,16 @@ export function Sidebar() {
       className="relative flex flex-col h-full bg-sidebar border-r border-sidebar-border overflow-hidden flex-shrink-0"
     >
       {/* Logo */}
-      <div className="flex items-center gap-3 px-4 py-5 border-b border-sidebar-border min-w-0">
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-          <GraduationCap className="w-5 h-5 text-primary-foreground" />
-        </div>
-        {!collapsed && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
-            <p className="text-sm font-bold text-foreground whitespace-nowrap">Hello CRM</p>
-            <p className="text-xs text-muted-foreground whitespace-nowrap">Education Agency</p>
+      <div className="flex items-center gap-3 px-4 py-4 border-b border-sidebar-border min-w-0">
+        {collapsed ? (
+          /* Collapsed: just the gold H icon */
+          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span className="text-sm font-black text-primary-foreground">H</span>
+          </div>
+        ) : (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="min-w-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/hello-logo.svg" alt="Hello Australia" className="h-10 w-auto" />
           </motion.div>
         )}
       </div>

@@ -52,14 +52,10 @@ function LoginForm() {
 
       <div className="w-full max-w-md relative">
         {/* Logo */}
-        <div className="flex flex-col items-center mb-8 gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/20 flex items-center justify-center">
-            <GraduationCap className="w-7 h-7 text-primary" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground">Hello CRM</h1>
-            <p className="text-sm text-muted-foreground">Education Agency · Hello Australia</p>
-          </div>
+        <div className="flex flex-col items-center mb-8 gap-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/hello-logo.svg" alt="Hello Australia" className="h-14 w-auto" />
+          <p className="text-sm text-muted-foreground">Sistema interno de gestão de leads</p>
         </div>
 
         {/* Card */}
