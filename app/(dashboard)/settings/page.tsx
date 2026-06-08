@@ -32,11 +32,15 @@ const THEMES: { id: Theme; label: string; preview: string }[] = [
   { id: "light", label: "Claro", preview: "bg-[oklch(0.97_0.005_250)]" },
 ];
 
+type OfficeCity = "Sydney" | "Melbourne" | "Brisbane" | "Gold Coast" | "Perth" | "Adelaide";
+const OFFICES: OfficeCity[] = ["Sydney", "Melbourne", "Brisbane", "Gold Coast", "Perth", "Adelaide"];
+
 interface UserRecord {
   id: string;
   username: string;
   displayName: string;
   role: "admin" | "consultant";
+  office?: OfficeCity;
   createdAt: string;
 }
 
@@ -63,8 +67,17 @@ export default function SettingsPage() {
   const [usersList, setUsersList] = useState<UserRecord[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [showNewUserForm, setShowNewUserForm] = useState(false);
-  const [newUser, setNewUser] = useState({ displayName: "", username: "", password: "", role: "consultant" as "admin" | "consultant" });
+  const [newUser, setNewUser] = useState({ displayName: "", username: "", password: "", role: "consultant" as "admin" | "consultant", office: "Sydney" as OfficeCity });
   const [savingNewUser, setSavingNewUser] = useState(false);
+
+  // Notification prefs state
+  const [notifPrefs, setNotifPrefs] = useState({
+    taskReminders: true,
+    newLeadAssigned: true,
+    stageChanges: false,
+    paymentReminders: true,
+    visaAlerts: true,
+  });
 
   function handleSave() {
     toast.success("Configurações salvas");
@@ -117,7 +130,7 @@ export default function SettingsPage() {
   }
 
   useEffect(() => {
-    if (activeSection === "Usuários" && me?.role === "admin") {
+    if ((activeSection === "Usuários" || activeSection === "Agência") && me?.role === "admin") {
       loadUsers();
     }
   }, [activeSection, me]);
@@ -141,7 +154,7 @@ export default function SettingsPage() {
       } else {
         toast.success("Usuário criado com sucesso");
         setShowNewUserForm(false);
-        setNewUser({ displayName: "", username: "", password: "", role: "consultant" });
+        setNewUser({ displayName: "", username: "", password: "", role: "consultant", office: "Sydney" });
         loadUsers();
       }
     } catch {
@@ -342,6 +355,16 @@ export default function SettingsPage() {
                           <option value="admin">Admin</option>
                         </select>
                       </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Office</Label>
+                        <select
+                          value={newUser.office}
+                          onChange={(e) => setNewUser((u) => ({ ...u, office: e.target.value as OfficeCity }))}
+                          className="w-full bg-secondary/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                        >
+                          {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <Button type="submit" size="sm" disabled={savingNewUser} className="bg-primary text-primary-foreground hover:bg-primary/90">
@@ -401,29 +424,80 @@ export default function SettingsPage() {
           )}
 
           {activeSection === "Agência" && (
-            <div className="glass-card rounded-xl p-6 space-y-5">
-              <h2 className="text-base font-semibold">Configuração da Agência</h2>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Consultores</p>
-                  <div className="space-y-1.5">
-                    {CONSULTANTS.map((c) => (
-                      <div key={c} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/30 text-sm">
-                        <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-primary font-medium text-xs">
-                          {c.split(" ").map((w) => w[0]).join("")}
+            <div className="space-y-5">
+              <div className="glass-card rounded-xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold">Equipe Hello Australia</h2>
+                  <span className="text-xs text-muted-foreground">{usersList.length} membros</span>
+                </div>
+
+                {usersLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando...</p>
+                ) : (
+                  <div className="space-y-2">
+                    {usersList.map((u) => (
+                      <div key={u.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-border">
+                        <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+                          {u.displayName.split(" ").map((w) => w[0]).slice(0, 2).join("")}
                         </div>
-                        <span>{c}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{u.displayName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{u.username}</p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {/* Office selector */}
+                          {me?.role === "admin" ? (
+                            <select
+                              value={u.office ?? ""}
+                              onChange={async (e) => {
+                                const office = e.target.value as OfficeCity;
+                                await fetch(`/api/users/${u.id}`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ office }),
+                                });
+                                setUsersList((prev) => prev.map((x) => x.id === u.id ? { ...x, office } : x));
+                                toast.success("Office atualizado");
+                              }}
+                              className="bg-secondary border border-border rounded-lg px-2 py-1 text-xs text-foreground"
+                            >
+                              <option value="">— Office —</option>
+                              {OFFICES.map((o) => <option key={o} value={o}>{o}</option>)}
+                            </select>
+                          ) : (
+                            u.office && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                                {u.office}
+                              </span>
+                            )
+                          )}
+                          <span className={cn(
+                            "text-xs px-2 py-0.5 rounded-full font-medium",
+                            u.role === "admin"
+                              ? "bg-primary/15 text-primary border border-primary/20"
+                              : "bg-secondary text-muted-foreground border border-border"
+                          )}>
+                            {u.role === "admin" ? "Admin" : "Consultor"}
+                          </span>
+                        </div>
                       </div>
                     ))}
                   </div>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Cidades</p>
-                  <div className="flex flex-wrap gap-2">
-                    {CITIES.map((c) => (
-                      <span key={c} className="px-2.5 py-1 rounded-full text-xs bg-secondary/50 border border-border text-foreground">{c}</span>
-                    ))}
-                  </div>
+                )}
+              </div>
+
+              <div className="glass-card rounded-xl p-6 space-y-3">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Offices ativos</p>
+                <div className="flex flex-wrap gap-2">
+                  {OFFICES.map((o) => {
+                    const count = usersList.filter((u) => u.office === o).length;
+                    return count > 0 ? (
+                      <span key={o} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs bg-secondary/50 border border-border">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+                        {o} <span className="text-muted-foreground">({count})</span>
+                      </span>
+                    ) : null;
+                  })}
                 </div>
               </div>
             </div>
@@ -433,19 +507,31 @@ export default function SettingsPage() {
             <div className="glass-card rounded-xl p-6 space-y-5">
               <h2 className="text-base font-semibold">Preferências de Notificação</h2>
               <div className="space-y-3">
-                {[
-                  ["Lembretes de tarefas", true],
-                  ["Novo lead atribuído", true],
-                  ["Mudanças de etapa", false],
-                  ["Lembretes de pagamento", true],
-                  ["Alertas de prazo de visto", true],
-                ].map(([label, defaultOn]) => (
-                  <div key={String(label)} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
-                    <span className="text-sm">{String(label)}</span>
-                    <div className={cn("w-10 h-5 rounded-full transition-colors cursor-pointer", defaultOn ? "bg-primary" : "bg-muted")} />
+                {([
+                  { key: "taskReminders",     label: "Lembretes de tarefas" },
+                  { key: "newLeadAssigned",   label: "Novo lead atribuído" },
+                  { key: "stageChanges",      label: "Mudanças de etapa" },
+                  { key: "paymentReminders",  label: "Lembretes de pagamento" },
+                  { key: "visaAlerts",        label: "Alertas de prazo de visto" },
+                ] as { key: keyof typeof notifPrefs; label: string }[]).map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                    <span className="text-sm">{label}</span>
+                    <button
+                      onClick={() => setNotifPrefs((p) => ({ ...p, [key]: !p[key] }))}
+                      className={cn(
+                        "relative w-10 h-5 rounded-full transition-colors focus:outline-none",
+                        notifPrefs[key] ? "bg-primary" : "bg-muted"
+                      )}
+                    >
+                      <span className={cn(
+                        "absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform",
+                        notifPrefs[key] ? "translate-x-5" : "translate-x-0.5"
+                      )} />
+                    </button>
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-muted-foreground">As preferências são salvas localmente neste dispositivo.</p>
             </div>
           )}
 

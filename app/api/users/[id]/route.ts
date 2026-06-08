@@ -20,6 +20,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     ...user,
     displayName: body.displayName ?? user.displayName,
     role: body.role ?? user.role,
+    office: body.office !== undefined ? body.office : user.office,
     ...(body.password ? { passwordHash: hashPassword(body.password) } : {}),
   });
   return NextResponse.json({ success: true });
