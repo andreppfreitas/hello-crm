@@ -130,6 +130,10 @@ export interface Lead {
   stageChanges: StageChangeEvent[];
   visaChecklist: VisaChecklistItem[];
   score?: number;
+  // Visa / offshore status
+  currentVisaType?: string;
+  visaExpiryDate?: string;      // ISO date string YYYY-MM-DD
+  isOffshore?: boolean;         // currently outside home country (e.g. already in Australia)
   // Group (casal / família)
   groupId?: string;
   groupType?: "couple" | "family";

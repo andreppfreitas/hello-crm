@@ -156,11 +156,58 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
         <div className="space-y-4">
           {/* Contact info */}
           <div className="glass-card rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contact</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contato</h3>
             <InfoRow icon={Phone} label={lead.phone} />
             <InfoRow icon={Mail} label={lead.email} />
             <InfoRow icon={MapPin} label={lead.currentLocation} />
             <InfoRow icon={Globe} label={lead.country} />
+          </div>
+
+          {/* Visa / offshore */}
+          <div className="glass-card rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Visto & Status</h3>
+            <div className="flex items-center gap-2">
+              <span className={cn(
+                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
+                lead.isOffshore
+                  ? "bg-blue-500/15 text-blue-400 border border-blue-500/20"
+                  : "bg-secondary text-muted-foreground border border-border"
+              )}>
+                {lead.isOffshore ? "✈️ Offshore" : "🏠 Onshore"}
+              </span>
+              <button
+                onClick={() => updateLead(lead.id, { isOffshore: !lead.isOffshore })}
+                className="text-xs text-muted-foreground hover:text-primary transition-colors underline"
+              >
+                {lead.isOffshore ? "marcar onshore" : "marcar offshore"}
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">Tipo de visto atual</label>
+              <input
+                defaultValue={lead.currentVisaType ?? ""}
+                onBlur={(e) => updateLead(lead.id, { currentVisaType: e.target.value || undefined })}
+                placeholder="Ex: Tourist 600, Working Holiday 417..."
+                className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">Vencimento do visto</label>
+              <input
+                type="date"
+                defaultValue={lead.visaExpiryDate ?? ""}
+                onBlur={(e) => updateLead(lead.id, { visaExpiryDate: e.target.value || undefined })}
+                className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-1.5 text-foreground focus:outline-none focus:border-primary/50"
+              />
+              {lead.visaExpiryDate && (() => {
+                const daysLeft = Math.ceil((new Date(lead.visaExpiryDate).getTime() - Date.now()) / 86400000);
+                return (
+                  <p className={cn("text-xs font-medium", daysLeft < 0 ? "text-destructive" : daysLeft < 30 ? "text-amber-400" : "text-emerald-400")}>
+                    {daysLeft < 0 ? `⚠️ Vencido há ${Math.abs(daysLeft)} dias` : daysLeft < 30 ? `⚠️ Vence em ${daysLeft} dias` : `✓ Vence em ${daysLeft} dias`}
+                  </p>
+                );
+              })()}
+            </div>
           </div>
 
           {/* Course & budget */}

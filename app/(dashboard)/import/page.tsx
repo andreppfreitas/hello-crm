@@ -24,6 +24,9 @@ const LEAD_FIELDS = [
   { key: "temperature",        label: "Temperatura",           required: false },
   { key: "notes",              label: "Observações",           required: false },
   { key: "assignedConsultant", label: "Consultor",             required: false },
+  { key: "currentVisaType",    label: "Tipo de Visto Atual",   required: false },
+  { key: "visaExpiryDate",     label: "Vencimento do Visto",   required: false },
+  { key: "isOffshore",         label: "Offshore (sim/não)",    required: false },
   { key: "skip",               label: "— Ignorar coluna —",   required: false },
 ] as const;
 
@@ -80,19 +83,23 @@ function parseCSV(text: string): { headers: string[]; rows: string[][] } {
 }
 
 function guessMapping(header: string): FieldKey {
-  const h = header.toLowerCase();
+  const h = header.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); // strip accents
+  if (h.includes("consul")) return "assignedConsultant";
   if (h.includes("nome") || h.includes("name")) return "fullName";
-  if (h.includes("fone") || h.includes("phone") || h.includes("whats")) return "phone";
+  if (h.includes("fone") || h.includes("phone") || h.includes("whats") || h.includes("tel")) return "phone";
   if (h.includes("email") || h.includes("e-mail")) return "email";
-  if (h.includes("pais") || h.includes("country") || h.includes("país")) return "country";
-  if (h.includes("local") || h.includes("cidade atual") || h.includes("location")) return "currentLocation";
-  if (h.includes("curso") || h.includes("course")) return "courseInterest";
-  if (h.includes("city") || h.includes("cidade prefer")) return "preferredCity";
-  if (h.includes("budget") || h.includes("orcamento") || h.includes("orçamento")) return "budget";
+  if (h.includes("pais") || h.includes("country") || h.includes("origem") && h.includes("pais")) return "country";
+  if (h.includes("localizacao") || h.includes("location") || h.includes("cidade atual") || h.includes("onde mora")) return "currentLocation";
+  if (h.includes("curso") || h.includes("course") || h.includes("interesse")) return "courseInterest";
+  if (h.includes("cidade") || h.includes("city")) return "preferredCity";
+  if (h.includes("budget") || h.includes("orcamento") || h.includes("valor")) return "budget";
   if (h.includes("fonte") || h.includes("source") || h.includes("origem")) return "source";
   if (h.includes("temp")) return "temperature";
+  if (h.includes("vencimento") || h.includes("expir") || h.includes("validade")) return "visaExpiryDate";
+  if (h.includes("tipo") && h.includes("visto")) return "currentVisaType";
+  if (h.includes("visto") || h.includes("visa")) return "currentVisaType";
+  if (h.includes("offshore") || h.includes("fora do pais") || h.includes("australia")) return "isOffshore";
   if (h.includes("nota") || h.includes("note") || h.includes("obs")) return "notes";
-  if (h.includes("consul")) return "assignedConsultant";
   return "skip";
 }
 
@@ -140,6 +147,9 @@ export default function ImportPage() {
       });
       if (!data.fullName?.trim()) continue;
       try {
+        const isOffshoreVal = data.isOffshore
+          ? ["sim","yes","true","1","offshore","s"].includes(data.isOffshore.toLowerCase().trim())
+          : undefined;
         addLead({
           fullName: data.fullName.trim(),
           phone: data.phone ?? "",
@@ -154,6 +164,9 @@ export default function ImportPage() {
           stage: "new_lead" as PipelineStage,
           assignedConsultant: data.assignedConsultant || CONSULTANTS[0],
           notes: data.notes ?? "",
+          currentVisaType: data.currentVisaType || undefined,
+          visaExpiryDate: data.visaExpiryDate || undefined,
+          isOffshore: isOffshoreVal,
         });
         count++;
       } catch {}
