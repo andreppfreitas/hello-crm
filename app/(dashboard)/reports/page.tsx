@@ -13,7 +13,9 @@ import { TrendingUp, Clock, DollarSign } from "lucide-react";
 const COLORS = ["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#f43f5e", "#06b6d4", "#84cc16", "#ec4899"];
 
 export default function ReportsPage() {
-  const { leads } = useCRM();
+  const { leads: allLeads } = useCRM();
+  // Count only ungrouped leads + group primaries (members don't count as separate opportunities)
+  const leads = allLeads.filter((l) => !l.groupId || l.groupRole === "primary");
 
   const phaseData = PHASE_ORDER.map((phase) => ({
     phase: PHASE_CONFIG[phase].label,

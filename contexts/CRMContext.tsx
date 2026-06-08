@@ -10,21 +10,27 @@ import { buildNewLead, uid } from "@/lib/lead-builder";
 import { toast } from "sonner";
 
 // ── Stats computed client-side from lead array ────────────────────────────────
+// "active" leads = ungrouped leads + group primaries only (members don't count separately)
+function activeLeads(leads: Lead[]): Lead[] {
+  return leads.filter((l) => !l.groupId || l.groupRole === "primary");
+}
+
 function computeStats(leads: Lead[]): DashboardStats {
+  const active = activeLeads(leads);
   return {
-    total: leads.length,
-    hot: leads.filter((l) => l.temperature === "hot").length,
-    waitingReply: leads.filter((l) => l.stage === "waiting_response").length,
-    meetingsScheduled: leads.filter((l) => l.stage === "meeting_scheduled").length,
-    applicationsInProgress: leads.filter(
+    total: active.length,
+    hot: active.filter((l) => l.temperature === "hot").length,
+    waitingReply: active.filter((l) => l.stage === "waiting_response").length,
+    meetingsScheduled: active.filter((l) => l.stage === "meeting_scheduled").length,
+    applicationsInProgress: active.filter(
       (l) => STAGE_CONFIG[l.stage].order >= 8 && STAGE_CONFIG[l.stage].order <= 12
     ).length,
-    paymentsPending: leads.filter((l) => l.payments.some((p) => p.status === "pending")).length,
-    visaPending: leads.filter((l) =>
+    paymentsPending: active.filter((l) => l.payments.some((p) => p.status === "pending")).length,
+    visaPending: active.filter((l) =>
       ["visa_checklist_call", "statement_reviewed", "final_doc_check", "visa_applied", "final_instructions"].includes(l.stage)
     ).length,
-    closedWon: leads.filter((l) => l.stage === "closed_won").length,
-    closedLost: leads.filter((l) => l.stage === "closed_lost").length,
+    closedWon: active.filter((l) => l.stage === "closed_won").length,
+    closedLost: active.filter((l) => l.stage === "closed_lost").length,
   };
 }
 
