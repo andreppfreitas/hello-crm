@@ -60,11 +60,27 @@ export default function BriefingPage() {
   const { leads, reminders } = useCRM();
   const now = new Date();
 
-  // 1. Hot leads without contact in 7+ days
+  // 1. Hot leads without REAL activity in 7+ days
+  // "Activity" = lastContactAt OR updatedAt OR stageChange OR note — whichever is most recent.
+  // Leads in advanced phases (enrollment/payments/visa/closed) are excluded — they're clearly active.
+  const EARLY_PHASES = new Set(["leads", "qualifying", "proposal"]);
   const hotNoContact = leads.filter((l) => {
     if (l.temperature !== "hot") return false;
-    if (!l.lastContactAt) return true;
-    const days = (now.getTime() - new Date(l.lastContactAt).getTime()) / 86400000;
+    // Skip leads already deep in the pipeline — they've obviously been worked on
+    const phase = STAGE_CONFIG[l.stage]?.phase;
+    if (!EARLY_PHASES.has(phase)) return false;
+
+    const candidates: number[] = [
+      l.createdAt ? new Date(l.createdAt).getTime() : 0,
+      l.updatedAt ? new Date(l.updatedAt).getTime() : 0,
+      l.lastContactAt ? new Date(l.lastContactAt).getTime() : 0,
+      ...(l.stageChanges ?? []).map((sc) => new Date(sc.changedAt).getTime()),
+      ...(l.notesList ?? []).map((n) => new Date(n.createdAt).getTime()),
+      ...(l.contactHistory ?? []).map((c) => new Date(c.date).getTime()),
+    ].filter((t) => t > 0);
+
+    const mostRecent = Math.max(...candidates);
+    const days = (now.getTime() - mostRecent) / 86400000;
     return days >= 7;
   });
 
@@ -162,14 +178,22 @@ export default function BriefingPage() {
       </SectionCard>
 
       {/* 2. Hot leads no contact */}
-      <SectionCard icon={Flame} title="Hot Leads sem Contato (7+ dias)" color="red" count={hotNoContact.length}>
-        {hotNoContact.slice(0, 8).map((lead) => (
-          <LeadRow key={lead.id} lead={lead} meta={
-            <span className="text-xs text-red-400">
-              {lead.lastContactAt ? `${Math.floor((now.getTime() - new Date(lead.lastContactAt).getTime()) / 86400000)}d sem contato` : "Nunca contatado"}
-            </span>
-          } />
-        ))}
+      <SectionCard icon={Flame} title="Hot Leads sem Atividade (7+ dias)" color="red" count={hotNoContact.length}>
+        {hotNoContact.slice(0, 8).map((lead) => {
+          const candidates: number[] = [
+            lead.createdAt ? new Date(lead.createdAt).getTime() : 0,
+            lead.updatedAt ? new Date(lead.updatedAt).getTime() : 0,
+            lead.lastContactAt ? new Date(lead.lastContactAt).getTime() : 0,
+            ...(lead.stageChanges ?? []).map((sc) => new Date(sc.changedAt).getTime()),
+          ].filter((t) => t > 0);
+          const mostRecent = Math.max(...candidates);
+          const days = Math.floor((now.getTime() - mostRecent) / 86400000);
+          return (
+            <LeadRow key={lead.id} lead={lead} meta={
+              <span className="text-xs text-red-400">{days}d sem atividade</span>
+            } />
+          );
+        })}
       </SectionCard>
 
       {/* 3. Overdue tasks */}

@@ -6,7 +6,7 @@ import { StatCard } from "@/components/shared/StatCard";
 import { StageBadge } from "@/components/shared/StageBadge";
 import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
 import { formatDate } from "@/lib/utils";
-import { CITIES, COURSES, CONSULTANTS } from "@/lib/constants";
+import { CITIES, COURSES, CONSULTANTS, STAGE_CONFIG } from "@/lib/constants";
 import {
   Users, Flame, MessageSquare, Calendar, FileText,
   CreditCard, Globe, Trophy, XCircle,
@@ -53,9 +53,27 @@ export default function DashboardPage() {
     .filter((l) => l.daysLeft <= 30)
     .sort((a, b) => a.daysLeft - b.daysLeft);
 
+  // "Forgotten" = leads with no real activity in 7+ days.
+  // Use the MOST RECENT of: lastContactAt, updatedAt, last stageChange, createdAt.
+  // Also exclude leads already in advanced phases (enrollment → closed) — they've clearly been worked on.
+  const ACTIVE_PHASES = ["leads", "qualifying", "proposal"];
   const forgottenLeads = activeLeadsList.filter((l) => {
-    const lastContact = l.lastContactAt ?? l.createdAt;
-    const daysSince = Math.floor((now - new Date(lastContact).getTime()) / 86400000);
+    // Leads in enrollment/payments/visa/closed phases are actively being processed — not forgotten
+    const phase = STAGE_CONFIG[l.stage]?.phase;
+    if (!ACTIVE_PHASES.includes(phase)) return false;
+
+    // Find the most recent activity date across all signals
+    const candidates: number[] = [
+      l.createdAt ? new Date(l.createdAt).getTime() : 0,
+      l.updatedAt ? new Date(l.updatedAt).getTime() : 0,
+      l.lastContactAt ? new Date(l.lastContactAt).getTime() : 0,
+      ...(l.stageChanges ?? []).map((sc) => new Date(sc.changedAt).getTime()),
+      ...(l.notesList ?? []).map((n) => new Date(n.createdAt).getTime()),
+      ...(l.contactHistory ?? []).map((c) => new Date(c.date).getTime()),
+    ].filter((t) => t > 0);
+
+    const lastActivity = Math.max(...candidates);
+    const daysSince = Math.floor((now - lastActivity) / 86400000);
     return daysSince > 7;
   });
 
