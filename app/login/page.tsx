@@ -54,7 +54,7 @@ function LoginForm() {
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/hello-logo.png" alt="Hello Australia" className="h-20 w-auto" />
+          <img src="/hello-logo.png" alt="Hello Australia" className="h-28 w-auto" />
           <p className="text-sm text-muted-foreground">Sistema interno de gestão de leads</p>
         </div>
 
