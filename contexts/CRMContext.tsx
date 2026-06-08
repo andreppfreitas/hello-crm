@@ -8,6 +8,7 @@ import type { Lead, DashboardStats, Reminder } from "@/types";
 import { STAGE_CONFIG } from "@/lib/constants";
 import { buildNewLead, uid } from "@/lib/lead-builder";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 // ── Stats computed client-side from lead array ────────────────────────────────
 // "active" leads = ungrouped leads + group primaries only (members don't count separately)
@@ -58,6 +59,14 @@ export function CRMProvider({ children }: { children: ReactNode }) {
   const [stats, setStats] = useState<DashboardStats>(computeStats([]));
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
+  function filterLeads(loadedLeads: Lead[]): Lead[] {
+    if (user?.role === "consultant") {
+      return loadedLeads.filter((l: Lead) => l.assignedConsultant === user.displayName);
+    }
+    return loadedLeads;
+  }
 
   // Initial load
   useEffect(() => {
@@ -67,22 +76,26 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     ])
       .then(([leadsData, remindersData]) => {
         const loadedLeads: Lead[] = leadsData.leads ?? [];
-        setLeads(loadedLeads);
-        setStats(computeStats(loadedLeads));
+        const filtered = filterLeads(loadedLeads);
+        setLeads(filtered);
+        setStats(computeStats(filtered));
         setReminders(remindersData.reminders ?? []);
       })
       .catch(() => toast.error("Erro ao carregar dados"))
       .finally(() => setLoading(false));
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const refreshLeads = useCallback(() => {
     fetch("/api/leads")
       .then((r) => r.json())
       .then(({ leads: l }) => {
-        setLeads(l ?? []);
-        setStats(computeStats(l ?? []));
+        const filtered = filterLeads(l ?? []);
+        setLeads(filtered);
+        setStats(computeStats(filtered));
       });
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const getLead = useCallback(
     (id: string) => leads.find((l) => l.id === id),
@@ -92,7 +105,10 @@ export function CRMProvider({ children }: { children: ReactNode }) {
   // ── Leads CRUD (optimistic) ────────────────────────────────────────────────
   const addLead = useCallback(
     (data: Parameters<CRMContextValue["addLead"]>[0]): Lead => {
-      const lead = buildNewLead(data as Parameters<typeof buildNewLead>[0]);
+      const enrichedData = user?.role === "consultant"
+        ? { ...data, assignedConsultant: user.displayName }
+        : data;
+      const lead = buildNewLead(enrichedData as Parameters<typeof buildNewLead>[0]);
       // Optimistic update
       setLeads((prev) => {
         const next = [lead, ...prev];
@@ -107,7 +123,7 @@ export function CRMProvider({ children }: { children: ReactNode }) {
       }).catch(() => toast.error("Erro ao salvar lead"));
       return lead;
     },
-    []
+    [user] // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const updateLead = useCallback((id: string, data: Partial<Lead>) => {

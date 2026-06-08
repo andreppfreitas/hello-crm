@@ -21,7 +21,7 @@ import {
 } from "@dnd-kit/core";
 import { useState } from "react";
 import { toast } from "sonner";
-import { MessageSquare, CheckSquare, Clock } from "lucide-react";
+import { MessageSquare, CheckSquare, Clock, Phone } from "lucide-react";
 
 // ── Droppable stage row ─────────────────────────────────────────────────────
 
@@ -67,6 +67,16 @@ function DroppableStageRow({
 
 // ── Draggable card ──────────────────────────────────────────────────────────
 
+function openWhatsApp(lead: Lead, e: React.MouseEvent) {
+  e.stopPropagation();
+  const raw = lead.phone.replace(/\D/g, "");
+  const phone = raw.startsWith("55") ? raw : `55${raw}`;
+  const firstName = lead.fullName.split(" ")[0];
+  const consultantFirstName = lead.assignedConsultant.split(" ")[0];
+  const message = `Olá ${firstName}! Tudo bem? 😊 Aqui é o/a ${consultantFirstName} da Hello Australia. Queria saber se ainda tem interesse em estudar na Austrália! Pode me passar mais detalhes sobre seus planos?`;
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+}
+
 function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isDragging?: boolean; groupPartnerName?: string }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: lead.id });
 
@@ -84,7 +94,7 @@ function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isD
       {...listeners}
       {...attributes}
       className={cn(
-        "glass-card rounded-lg p-3 cursor-grab active:cursor-grabbing space-y-2.5 select-none",
+        "glass-card rounded-lg p-3 cursor-grab active:cursor-grabbing space-y-2.5 select-none group",
         isDragging && "opacity-30"
       )}
     >
@@ -109,7 +119,16 @@ function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isD
             )}
           </div>
         </div>
-        <TemperatureBadge temp={lead.temperature} className="text-[10px] px-1.5 py-0.5 flex-shrink-0" />
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={(e) => openWhatsApp(lead, e)}
+            title="Abrir WhatsApp"
+            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+          >
+            <Phone className="w-3 h-3" />
+          </button>
+          <TemperatureBadge temp={lead.temperature} className="text-[10px] px-1.5 py-0.5" />
+        </div>
       </div>
 
       <p className="text-xs text-muted-foreground truncate">{lead.courseInterest}</p>

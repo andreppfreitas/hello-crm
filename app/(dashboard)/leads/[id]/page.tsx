@@ -157,7 +157,27 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
           {/* Contact info */}
           <div className="glass-card rounded-xl p-4 space-y-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contato</h3>
-            <InfoRow icon={Phone} label={lead.phone} />
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <InfoRow icon={Phone} label={lead.phone} />
+              </div>
+              {lead.phone && (
+                <button
+                  onClick={() => {
+                    const raw = lead.phone.replace(/\D/g, "");
+                    const phone = raw.startsWith("55") ? raw : `55${raw}`;
+                    const firstName = lead.fullName.split(" ")[0];
+                    const consultantFirstName = lead.assignedConsultant.split(" ")[0];
+                    const message = `Olá ${firstName}! Tudo bem? 😊 Aqui é o/a ${consultantFirstName} da Hello Australia. Queria saber se ainda tem interesse em estudar na Austrália! Pode me passar mais detalhes sobre seus planos?`;
+                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
+                  }}
+                  title="Abrir WhatsApp"
+                  className="flex-shrink-0 p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
             <InfoRow icon={Mail} label={lead.email} />
             <InfoRow icon={MapPin} label={lead.currentLocation} />
             <InfoRow icon={Globe} label={lead.country} />

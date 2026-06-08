@@ -1,0 +1,35 @@
+import { NextRequest, NextResponse } from "next/server";
+import { SESSION_COOKIE } from "@/lib/auth-config";
+import { dbGetUser, dbSaveUser, dbDeleteUser, hashPassword } from "@/lib/db/users-db";
+
+async function getSessionUser(request: NextRequest) {
+  const session = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!session) return null;
+  const [userId] = session.split(":");
+  return dbGetUser(userId);
+}
+
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const me = await getSessionUser(request);
+  if (!me || me.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const user = await dbGetUser(id);
+  if (!user) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  const body = await request.json();
+  await dbSaveUser({
+    ...user,
+    displayName: body.displayName ?? user.displayName,
+    role: body.role ?? user.role,
+    ...(body.password ? { passwordHash: hashPassword(body.password) } : {}),
+  });
+  return NextResponse.json({ success: true });
+}
+
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const me = await getSessionUser(request);
+  if (!me || me.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (id === me.id) return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
+  await dbDeleteUser(id);
+  return NextResponse.json({ success: true });
+}

@@ -39,8 +39,63 @@ export default function DashboardPage() {
 
   const hotLeads = leads.filter((l) => l.temperature === "hot").slice(0, 5);
 
+  const now = Date.now();
+  const activeLeadsList = leads.filter((l) => l.stage !== "closed_won" && l.stage !== "closed_lost" && (!l.groupId || l.groupRole === "primary"));
+
+  const visaAlerts = activeLeadsList
+    .filter((l) => l.visaExpiryDate)
+    .map((l) => ({
+      ...l,
+      daysLeft: Math.ceil((new Date(l.visaExpiryDate!).getTime() - now) / 86400000),
+    }))
+    .filter((l) => l.daysLeft <= 30)
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+
+  const forgottenLeads = activeLeadsList.filter((l) => {
+    const lastContact = l.lastContactAt ?? l.createdAt;
+    const daysSince = Math.floor((now - new Date(lastContact).getTime()) / 86400000);
+    return daysSince > 7;
+  });
+
   return (
     <div className="space-y-6">
+      {/* Alerts */}
+      {(visaAlerts.length > 0 || forgottenLeads.length > 0) && (
+        <div className="space-y-3">
+          {visaAlerts.length > 0 && (
+            <div className="glass-card rounded-xl p-4 border border-amber-500/30 bg-amber-500/5">
+              <p className="text-sm font-semibold text-amber-400 mb-2">⚠️ {visaAlerts.length} lead(s) com visto vencendo em breve</p>
+              <div className="flex flex-wrap gap-2">
+                {visaAlerts.map((l) => (
+                  <Link key={l.id} href={`/leads/${l.id}`}>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-colors">
+                      {l.fullName.split(" ")[0]} ({l.daysLeft < 0 ? `vencido há ${Math.abs(l.daysLeft)}d` : `${l.daysLeft}d`})
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {forgottenLeads.length > 0 && (
+            <div className="glass-card rounded-xl p-4 border border-blue-500/30 bg-blue-500/5">
+              <p className="text-sm font-semibold text-blue-400 mb-2">💤 {forgottenLeads.length} lead(s) sem contato há +7 dias</p>
+              <div className="flex flex-wrap gap-2">
+                {forgottenLeads.slice(0, 10).map((l) => (
+                  <Link key={l.id} href={`/leads/${l.id}`}>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-blue-500/15 text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 transition-colors">
+                      {l.fullName.split(" ")[0]}
+                    </span>
+                  </Link>
+                ))}
+                {forgottenLeads.length > 10 && (
+                  <span className="text-xs px-2.5 py-1 text-muted-foreground">+{forgottenLeads.length - 10} mais</span>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* KPI Grid */}
       <div className="grid grid-cols-3 gap-4 xl:grid-cols-5">
         <StatCard title="Total Leads" value={stats.total} icon={Users} iconColor="text-blue-400" />

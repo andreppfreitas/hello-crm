@@ -4,6 +4,7 @@ import "./globals.css";
 import { CRMProvider } from "@/contexts/CRMContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -19,10 +20,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} h-full bg-background text-foreground antialiased`}>
         <ThemeProvider>
           <LanguageProvider>
-            <CRMProvider>
-              {children}
-              <Toaster position="bottom-right" richColors />
-            </CRMProvider>
+            <AuthProvider>
+              <CRMProvider>
+                {children}
+                <Toaster position="bottom-right" richColors />
+              </CRMProvider>
+            </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

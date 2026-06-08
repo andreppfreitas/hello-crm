@@ -1,21 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CONSULTANTS, CITIES } from "@/lib/constants";
 import { toast } from "sonner";
-import { User, Building2, Bell, Palette, Database } from "lucide-react";
+import { User, Building2, Bell, Palette, Database, Lock, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
-const SECTIONS = ["Perfil", "Agência", "Notificações", "Aparência", "Dados"] as const;
+const SECTIONS = ["Perfil", "Segurança", "Usuários", "Agência", "Notificações", "Aparência", "Dados"] as const;
 type Section = typeof SECTIONS[number];
 
 const ICONS: Record<Section, React.ElementType> = {
   Perfil: User,
+  Segurança: Lock,
+  Usuários: Users,
   Agência: Building2,
   Notificações: Bell,
   Aparência: Palette,
@@ -29,10 +32,19 @@ const THEMES: { id: Theme; label: string; preview: string }[] = [
   { id: "light", label: "Claro", preview: "bg-[oklch(0.97_0.005_250)]" },
 ];
 
+interface UserRecord {
+  id: string;
+  username: string;
+  displayName: string;
+  role: "admin" | "consultant";
+  createdAt: string;
+}
+
 export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<Section>("Perfil");
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
+  const { user: me } = useAuth();
 
   const [profile, setProfile] = useState({
     name: "André Perez",
@@ -41,9 +53,142 @@ export default function SettingsPage() {
     phone: "+61 400 000 000",
   });
 
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  // Users state
+  const [usersList, setUsersList] = useState<UserRecord[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [showNewUserForm, setShowNewUserForm] = useState(false);
+  const [newUser, setNewUser] = useState({ displayName: "", username: "", password: "", role: "consultant" as "admin" | "consultant" });
+  const [savingNewUser, setSavingNewUser] = useState(false);
+
   function handleSave() {
     toast.success("Configurações salvas");
   }
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast.error("As senhas não coincidem");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Nova senha deve ter pelo menos 6 caracteres");
+      return;
+    }
+    setSavingPassword(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Erro ao alterar senha");
+      } else {
+        toast.success("Senha alterada com sucesso");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch {
+      toast.error("Erro ao alterar senha");
+    } finally {
+      setSavingPassword(false);
+    }
+  }
+
+  async function loadUsers() {
+    setUsersLoading(true);
+    try {
+      const res = await fetch("/api/users");
+      if (res.ok) {
+        const data = await res.json();
+        setUsersList(data.users ?? []);
+      }
+    } finally {
+      setUsersLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeSection === "Usuários" && me?.role === "admin") {
+      loadUsers();
+    }
+  }, [activeSection, me]);
+
+  async function handleCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newUser.displayName || !newUser.username || !newUser.password) {
+      toast.error("Preencha todos os campos");
+      return;
+    }
+    setSavingNewUser(true);
+    try {
+      const res = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "Erro ao criar usuário");
+      } else {
+        toast.success("Usuário criado com sucesso");
+        setShowNewUserForm(false);
+        setNewUser({ displayName: "", username: "", password: "", role: "consultant" });
+        loadUsers();
+      }
+    } catch {
+      toast.error("Erro ao criar usuário");
+    } finally {
+      setSavingNewUser(false);
+    }
+  }
+
+  async function handleRoleChange(userId: string, role: "admin" | "consultant") {
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (res.ok) {
+        toast.success("Papel atualizado");
+        loadUsers();
+      } else {
+        toast.error("Erro ao atualizar papel");
+      }
+    } catch {
+      toast.error("Erro ao atualizar papel");
+    }
+  }
+
+  async function handleDeleteUser(userId: string, displayName: string) {
+    if (!confirm(`Excluir ${displayName}?`)) return;
+    try {
+      const res = await fetch(`/api/users/${userId}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success(`${displayName} excluído`);
+        loadUsers();
+      } else {
+        const data = await res.json();
+        toast.error(data.error ?? "Erro ao excluir");
+      }
+    } catch {
+      toast.error("Erro ao excluir usuário");
+    }
+  }
+
+  const visibleSections = SECTIONS.filter((s) => {
+    if (s === "Usuários") return me?.role === "admin";
+    return true;
+  });
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -51,7 +196,7 @@ export default function SettingsPage() {
         {/* Sidebar nav */}
         <div className="w-48 flex-shrink-0">
           <div className="glass-card rounded-xl p-2 space-y-1">
-            {SECTIONS.map((section) => {
+            {visibleSections.map((section) => {
               const Icon = ICONS[section];
               return (
                 <button
@@ -96,6 +241,162 @@ export default function SettingsPage() {
                 </div>
               </div>
               <Button onClick={handleSave} className="bg-primary text-primary-foreground hover:bg-primary/90">Salvar</Button>
+            </div>
+          )}
+
+          {activeSection === "Segurança" && (
+            <div className="glass-card rounded-xl p-6 space-y-5">
+              <h2 className="text-base font-semibold">Alterar Senha</h2>
+              <form onSubmit={handleChangePassword} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Senha atual</Label>
+                  <Input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="bg-secondary/50"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Nova senha</Label>
+                  <Input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="bg-secondary/50"
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Confirmar nova senha</Label>
+                  <Input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="bg-secondary/50"
+                    placeholder="••••••••"
+                  />
+                </div>
+                <Button type="submit" disabled={savingPassword} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  {savingPassword ? "Salvando..." : "Salvar nova senha"}
+                </Button>
+              </form>
+            </div>
+          )}
+
+          {activeSection === "Usuários" && me?.role === "admin" && (
+            <div className="space-y-4">
+              <div className="glass-card rounded-xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base font-semibold">Usuários do Sistema</h2>
+                  <Button
+                    size="sm"
+                    onClick={() => setShowNewUserForm((v) => !v)}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1.5"
+                  >
+                    + Novo Usuário
+                  </Button>
+                </div>
+
+                {showNewUserForm && (
+                  <form onSubmit={handleCreateUser} className="p-4 rounded-xl bg-secondary/30 border border-border space-y-3">
+                    <p className="text-sm font-medium">Novo Usuário</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Nome completo</Label>
+                        <Input
+                          value={newUser.displayName}
+                          onChange={(e) => setNewUser((u) => ({ ...u, displayName: e.target.value }))}
+                          className="bg-secondary/50"
+                          placeholder="Ex: Maria Silva"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Username</Label>
+                        <Input
+                          value={newUser.username}
+                          onChange={(e) => setNewUser((u) => ({ ...u, username: e.target.value }))}
+                          className="bg-secondary/50"
+                          placeholder="Ex: mariasilva"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Senha temporária</Label>
+                        <Input
+                          type="password"
+                          value={newUser.password}
+                          onChange={(e) => setNewUser((u) => ({ ...u, password: e.target.value }))}
+                          className="bg-secondary/50"
+                          placeholder="••••••••"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs text-muted-foreground">Papel</Label>
+                        <select
+                          value={newUser.role}
+                          onChange={(e) => setNewUser((u) => ({ ...u, role: e.target.value as "admin" | "consultant" }))}
+                          className="w-full bg-secondary/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary/50"
+                        >
+                          <option value="consultant">Consultor</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit" size="sm" disabled={savingNewUser} className="bg-primary text-primary-foreground hover:bg-primary/90">
+                        {savingNewUser ? "Criando..." : "Criar Usuário"}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" onClick={() => setShowNewUserForm(false)}>Cancelar</Button>
+                    </div>
+                  </form>
+                )}
+
+                {usersLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando...</p>
+                ) : (
+                  <div className="space-y-2">
+                    {usersList.map((u) => (
+                      <div key={u.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
+                            {u.displayName.split(" ").map((w) => w[0]).slice(0, 2).join("")}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">{u.displayName}</p>
+                            <p className="text-xs text-muted-foreground">@{u.username}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={u.role}
+                            onChange={(e) => handleRoleChange(u.id, e.target.value as "admin" | "consultant")}
+                            className={cn(
+                              "text-xs px-2.5 py-1 rounded-full border font-medium bg-transparent focus:outline-none cursor-pointer",
+                              u.role === "admin"
+                                ? "border-yellow-500/40 text-yellow-400 bg-yellow-500/10"
+                                : "border-blue-500/40 text-blue-400 bg-blue-500/10"
+                            )}
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="consultant">Consultor</option>
+                          </select>
+                          {u.id !== me.id && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:bg-destructive/10 h-7 px-2 text-xs"
+                              onClick={() => handleDeleteUser(u.id, u.displayName)}
+                            >
+                              Excluir
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -214,9 +515,8 @@ export default function SettingsPage() {
               <h2 className="text-base font-semibold">Dados do Sistema</h2>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 {[
-                  ["Armazenamento", "In-memory (demo)"],
-                  ["Total de Leads", "50 seed + criados"],
-                  ["Modo", "Mock data store"],
+                  ["Armazenamento", "Upstash Redis"],
+                  ["Modo", "Produção"],
                   ["Versão", "1.0.0"],
                 ].map(([label, value]) => (
                   <div key={String(label)} className="p-3 rounded-lg bg-secondary/30">
