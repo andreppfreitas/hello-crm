@@ -95,7 +95,10 @@ function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isD
           </div>
           <div>
             <Link href={`/leads/${lead.id}`} onClick={(e) => e.stopPropagation()}>
-              <span className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors block max-w-[120px]">
+              <span
+                title={lead.fullName}
+                className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors block max-w-[160px]"
+              >
                 {lead.fullName}
               </span>
             </Link>
