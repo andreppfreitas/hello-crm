@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { PipelineStage, LeadTemperature, Task, Note } from "@/types";
+import type { Lead, PipelineStage, LeadTemperature, Task, Note } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
 import { TemplateDrawer } from "@/components/shared/TemplateDrawer";
@@ -463,46 +463,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
             )}
 
             {activeTab === "Timeline" && (
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold">Histórico Completo</h3>
-                {/* Stage changes */}
-                {(lead.stageChanges ?? []).length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mudanças de Estágio</p>
-                    {(lead.stageChanges ?? []).map((sc) => (
-                      <div key={sc.id} className="flex gap-3">
-                        <div className="w-7 h-7 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <ChevronRight className="w-3.5 h-3.5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0 pb-2 border-b border-border/50">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className={cn("text-xs font-medium", STAGE_CONFIG[sc.fromStage]?.color)}>{STAGE_CONFIG[sc.fromStage]?.label}</span>
-                            <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                            <span className={cn("text-xs font-medium", STAGE_CONFIG[sc.toStage]?.color)}>{STAGE_CONFIG[sc.toStage]?.label}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">{sc.changedBy} · {formatDate(sc.changedAt, "relative")}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {/* Contact history */}
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contatos</p>
-                  {lead.contactHistory.length === 0 && <p className="text-sm text-muted-foreground">Nenhum contato registrado.</p>}
-                  {lead.contactHistory.map((event) => (
-                    <div key={event.id} className="flex gap-3">
-                      <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0 pb-2 border-b border-border/50">
-                        <p className="text-sm text-foreground">{event.summary}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{event.authorName} · {formatDate(event.date, "relative")}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <TimelineTab lead={lead} />
             )}
 
             {activeTab === "Payments" && (
@@ -543,6 +504,137 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
               </div>
             )}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Unified Timeline ───────────────────────────────────────────────────────────
+
+type TimelineEvent = {
+  id: string;
+  date: string;
+  type: "created" | "stage" | "note" | "call" | "email" | "whatsapp" | "meeting" | "task" | "payment";
+  title: string;
+  subtitle?: string;
+  author?: string;
+};
+
+const TYPE_STYLES: Record<TimelineEvent["type"], { icon: React.ElementType; color: string; bg: string }> = {
+  created:   { icon: Sparkles,     color: "text-primary",      bg: "bg-primary/15" },
+  stage:     { icon: ChevronRight, color: "text-blue-400",     bg: "bg-blue-500/15" },
+  note:      { icon: FileText,     color: "text-violet-400",   bg: "bg-violet-500/15" },
+  call:      { icon: Phone,        color: "text-emerald-400",  bg: "bg-emerald-500/15" },
+  email:     { icon: Mail,         color: "text-cyan-400",     bg: "bg-cyan-500/15" },
+  whatsapp:  { icon: MessageSquare,color: "text-emerald-400",  bg: "bg-emerald-500/15" },
+  meeting:   { icon: Calendar,     color: "text-amber-400",    bg: "bg-amber-500/15" },
+  task:      { icon: CheckSquare,  color: "text-teal-400",     bg: "bg-teal-500/15" },
+  payment:   { icon: CreditCard,   color: "text-yellow-400",   bg: "bg-yellow-500/15" },
+};
+
+function TimelineTab({ lead }: { lead: Lead }) {
+  const events: TimelineEvent[] = [];
+
+  // Lead creation
+  events.push({
+    id: "created",
+    date: lead.createdAt,
+    type: "created",
+    title: "Lead criada no CRM",
+    subtitle: `Atribuída a ${lead.assignedConsultant} · origem: ${lead.source}`,
+  });
+
+  // Stage changes
+  (lead.stageChanges ?? []).forEach((sc) => {
+    events.push({
+      id: sc.id,
+      date: sc.changedAt,
+      type: "stage",
+      title: `${STAGE_CONFIG[sc.fromStage]?.label} → ${STAGE_CONFIG[sc.toStage]?.label}`,
+      author: sc.changedBy,
+    });
+  });
+
+  // Notes (notesList)
+  lead.notesList.forEach((note) => {
+    events.push({
+      id: note.id,
+      date: note.createdAt,
+      type: note.type as TimelineEvent["type"],
+      title: note.content,
+      author: note.authorName,
+    });
+  });
+
+  // Contact history (deduplicate with notesList by checking proximity)
+  lead.contactHistory.forEach((ev) => {
+    events.push({
+      id: ev.id,
+      date: ev.date,
+      type: ev.type as TimelineEvent["type"],
+      title: ev.summary,
+      author: ev.authorName,
+    });
+  });
+
+  // Completed tasks
+  lead.tasks.filter((t) => t.completed && t.completedAt).forEach((t) => {
+    events.push({
+      id: `task-${t.id}`,
+      date: t.completedAt!,
+      type: "task",
+      title: `✓ ${t.title}`,
+    });
+  });
+
+  // Collected payments
+  lead.payments.filter((p) => p.paidAt).forEach((p) => {
+    events.push({
+      id: `pay-${p.id}`,
+      date: p.paidAt!,
+      type: "payment",
+      title: `Pagamento recebido: ${p.label}`,
+      subtitle: `${p.currency} ${p.amount.toLocaleString("pt-BR")}`,
+    });
+  });
+
+  // Sort newest first
+  events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  if (events.length === 0) {
+    return <p className="text-sm text-muted-foreground">Nenhum evento registrado.</p>;
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold">Linha do Tempo</h3>
+        <span className="text-xs text-muted-foreground">{events.length} evento{events.length !== 1 ? "s" : ""}</span>
+      </div>
+      <div className="relative">
+        {/* Vertical line */}
+        <div className="absolute left-3.5 top-0 bottom-0 w-px bg-border/50" />
+        <div className="space-y-4">
+          {events.map((ev) => {
+            const style = TYPE_STYLES[ev.type] ?? TYPE_STYLES.note;
+            const Icon = style.icon;
+            return (
+              <div key={ev.id} className="flex gap-3 relative">
+                <div className={cn("w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 z-10 ring-2 ring-background", style.bg)}>
+                  <Icon className={cn("w-3.5 h-3.5", style.color)} />
+                </div>
+                <div className="flex-1 min-w-0 pb-3">
+                  <p className="text-sm text-foreground leading-snug">{ev.title}</p>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    {ev.subtitle && <span className="text-xs text-muted-foreground">{ev.subtitle}</span>}
+                    {ev.author && <span className="text-xs text-muted-foreground">{ev.author} ·</span>}
+                    <span className="text-xs text-muted-foreground">{formatDate(ev.date, "relative")}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

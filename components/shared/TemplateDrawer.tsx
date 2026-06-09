@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { STAGE_TEMPLATES, STAGE_CONFIG, type MessageTemplate } from "@/lib/constants";
+import type { CustomTemplate } from "@/types";
 import type { Lead } from "@/types";
 import { cn } from "@/lib/utils";
 import { Copy, Check, MessageCircle, Mail, X, Sparkles, ChevronRight } from "lucide-react";
@@ -88,7 +89,20 @@ function TemplateCard({ template, lead }: { template: MessageTemplate; lead: Lea
 
 export function TemplateDrawer({ lead, open, onClose }: TemplateDrawerProps) {
   const [filter, setFilter] = useState<"all" | "whatsapp" | "email">("all");
-  const allTemplates = STAGE_TEMPLATES[lead.stage] ?? [];
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+
+  useEffect(() => {
+    if (open) {
+      fetch("/api/templates").then(r => r.json()).then(d => setCustomTemplates(d.templates ?? [])).catch(() => {});
+    }
+  }, [open]);
+
+  const stageTemplates = STAGE_TEMPLATES[lead.stage] ?? [];
+  // Merge: stage-specific first, then custom global templates
+  const allTemplates: MessageTemplate[] = [
+    ...stageTemplates,
+    ...customTemplates.map(ct => ({ label: `★ ${ct.label}`, channel: ct.channel, subject: ct.subject, body: ct.body })),
+  ];
   const filtered = filter === "all" ? allTemplates : allTemplates.filter((t) => t.channel === filter);
 
   return (

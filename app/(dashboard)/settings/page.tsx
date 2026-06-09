@@ -6,14 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CONSULTANTS, CITIES } from "@/lib/constants";
 import { toast } from "sonner";
-import { User, Building2, Bell, Palette, Database, Lock, Users } from "lucide-react";
+import { User, Building2, Bell, Palette, Database, Lock, Users, MessageCircle, Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import type { CustomTemplate } from "@/types";
 import { cn } from "@/lib/utils";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 
-const SECTIONS_PT = ["Perfil", "Segurança", "Usuários", "Agência", "Notificações", "Aparência", "Dados"] as const;
-const SECTIONS_EN = ["Profile", "Security", "Users", "Agency", "Notifications", "Appearance", "Data"] as const;
+const SECTIONS_PT = ["Perfil", "Segurança", "Usuários", "Agência", "Notificações", "Aparência", "Templates", "Dados"] as const;
+const SECTIONS_EN = ["Profile", "Security", "Users", "Agency", "Notifications", "Appearance", "Templates", "Data"] as const;
 type SectionPT = typeof SECTIONS_PT[number];
 type SectionEN = typeof SECTIONS_EN[number];
 type Section = SectionPT;
@@ -25,6 +26,7 @@ const ICONS: Record<Section, React.ElementType> = {
   Agência: Building2,
   Notificações: Bell,
   Aparência: Palette,
+  Templates: MessageCircle,
   Dados: Database,
 };
 
@@ -55,8 +57,8 @@ export default function SettingsPage() {
 
   const SECTIONS = language === "en" ? SECTIONS_EN : SECTIONS_PT;
   const SECTION_MAP: Record<string, Section> = language === "en"
-    ? { "Profile": "Perfil", "Security": "Segurança", "Users": "Usuários", "Agency": "Agência", "Notifications": "Notificações", "Appearance": "Aparência", "Data": "Dados" }
-    : { "Perfil": "Perfil", "Segurança": "Segurança", "Usuários": "Usuários", "Agência": "Agência", "Notificações": "Notificações", "Aparência": "Aparência", "Dados": "Dados" };
+    ? { "Profile": "Perfil", "Security": "Segurança", "Users": "Usuários", "Agency": "Agência", "Notifications": "Notificações", "Appearance": "Aparência", "Templates": "Templates", "Data": "Dados" }
+    : { "Perfil": "Perfil", "Segurança": "Segurança", "Usuários": "Usuários", "Agência": "Agência", "Notificações": "Notificações", "Aparência": "Aparência", "Templates": "Templates", "Dados": "Dados" };
 
   const [profile, setProfile] = useState({
     name: "André Perez",
@@ -75,6 +77,42 @@ export default function SettingsPage() {
   const [showNewUserForm, setShowNewUserForm] = useState(false);
   const [newUser, setNewUser] = useState({ displayName: "", username: "", password: "", role: "consultant" as "admin" | "consultant", office: "Sydney" as OfficeCity });
   const [savingNewUser, setSavingNewUser] = useState(false);
+
+  // ── Custom Templates ─────────────────────────────────────────────────────────
+  const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+  const [tplLoading, setTplLoading] = useState(false);
+  const [showNewTpl, setShowNewTpl] = useState(false);
+  const [newTpl, setNewTpl] = useState({ label: "", channel: "whatsapp" as "whatsapp" | "email", subject: "", body: "" });
+  const [editingTplId, setEditingTplId] = useState<string | null>(null);
+  const [editTpl, setEditTpl] = useState({ label: "", channel: "whatsapp" as "whatsapp" | "email", subject: "", body: "" });
+
+  async function loadTemplates() {
+    setTplLoading(true);
+    fetch("/api/templates").then(r => r.json()).then(d => { setCustomTemplates(d.templates ?? []); setTplLoading(false); }).catch(() => setTplLoading(false));
+  }
+
+  async function handleCreateTemplate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newTpl.label || !newTpl.body) { toast.error("Preencha nome e corpo do template"); return; }
+    const res = await fetch("/api/templates", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(newTpl) });
+    if (res.ok) { toast.success("Template criado"); setShowNewTpl(false); setNewTpl({ label: "", channel: "whatsapp", subject: "", body: "" }); loadTemplates(); }
+    else toast.error("Erro ao criar template");
+  }
+
+  async function handleDeleteTemplate(id: string) {
+    const res = await fetch("/api/templates", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    if (res.ok) { toast.success("Template removido"); loadTemplates(); }
+  }
+
+  async function handleUpdateTemplate(id: string) {
+    const res = await fetch("/api/templates", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...editTpl }) });
+    if (res.ok) { toast.success("Template atualizado"); setEditingTplId(null); loadTemplates(); }
+  }
+
+  useEffect(() => {
+    if (activeSection === "Templates") loadTemplates();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
 
   const [notifPrefs, setNotifPrefs] = useState({
     taskReminders: true,
@@ -532,6 +570,108 @@ export default function SettingsPage() {
                       <p className="text-xs text-muted-foreground">{lang.desc}</p>
                       {language === lang.id && <p className="text-xs text-primary mt-1">{language === "en" ? "Active" : "Ativo"}</p>}
                     </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeSection === "Templates" && (
+            <div className="space-y-4">
+              <div className="glass-card rounded-xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-base font-semibold">Templates Personalizados</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">Templates globais disponíveis em todas as leads (WhatsApp e e-mail)</p>
+                  </div>
+                  {me?.role === "admin" && (
+                    <Button size="sm" onClick={() => setShowNewTpl(true)} className="gap-1.5">
+                      <Plus className="w-3.5 h-3.5" /> Novo Template
+                    </Button>
+                  )}
+                </div>
+
+                {/* New template form */}
+                {showNewTpl && (
+                  <form onSubmit={handleCreateTemplate} className="p-4 rounded-xl bg-secondary/30 border border-border space-y-3">
+                    <h3 className="text-sm font-semibold">Novo Template</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Nome do template</label>
+                        <Input value={newTpl.label} onChange={e => setNewTpl(t => ({...t, label: e.target.value}))} placeholder="Ex: Follow-up pós reunião" className="bg-secondary/50" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Canal</label>
+                        <select value={newTpl.channel} onChange={e => setNewTpl(t => ({...t, channel: e.target.value as "whatsapp"|"email"}))} className="w-full bg-secondary/50 border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none">
+                          <option value="whatsapp">📱 WhatsApp</option>
+                          <option value="email">📧 E-mail</option>
+                        </select>
+                      </div>
+                    </div>
+                    {newTpl.channel === "email" && (
+                      <div>
+                        <label className="text-xs text-muted-foreground mb-1 block">Assunto</label>
+                        <Input value={newTpl.subject} onChange={e => setNewTpl(t => ({...t, subject: e.target.value}))} placeholder="Assunto do e-mail" className="bg-secondary/50" />
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Mensagem — use {"{name}"}, {"{course}"}, {"{city}"}, {"{consultant}"}</label>
+                      <textarea value={newTpl.body} onChange={e => setNewTpl(t => ({...t, body: e.target.value}))} rows={4} placeholder="Olá {name}! ..." className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:border-primary/50" />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="submit" size="sm">Salvar</Button>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setShowNewTpl(false)}>Cancelar</Button>
+                    </div>
+                  </form>
+                )}
+
+                {tplLoading && <p className="text-sm text-muted-foreground">Carregando...</p>}
+                {!tplLoading && customTemplates.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">Nenhum template personalizado ainda</p>
+                    <p className="text-xs mt-0.5">Templates por estágio já vêm pré-configurados no sistema</p>
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {customTemplates.map(tpl => (
+                    <div key={tpl.id} className="border border-border rounded-xl p-4 space-y-2">
+                      {editingTplId === tpl.id ? (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <Input value={editTpl.label} onChange={e => setEditTpl(t => ({...t, label: e.target.value}))} className="bg-secondary/50 text-sm" />
+                            <select value={editTpl.channel} onChange={e => setEditTpl(t => ({...t, channel: e.target.value as "whatsapp"|"email"}))} className="bg-secondary/50 border border-border rounded-md px-3 py-1.5 text-sm text-foreground focus:outline-none">
+                              <option value="whatsapp">📱 WhatsApp</option>
+                              <option value="email">📧 E-mail</option>
+                            </select>
+                          </div>
+                          <textarea value={editTpl.body} onChange={e => setEditTpl(t => ({...t, body: e.target.value}))} rows={3} className="w-full bg-secondary/50 border border-border rounded-lg px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:border-primary/50" />
+                          <div className="flex gap-2">
+                            <button onClick={() => handleUpdateTemplate(tpl.id)} className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary/15 text-primary hover:bg-primary/25 transition-colors"><Check className="w-3 h-3" /> Salvar</button>
+                            <button onClick={() => setEditingTplId(null)} className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors"><X className="w-3 h-3" /> Cancelar</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className={cn("p-1 rounded-md text-xs", tpl.channel === "whatsapp" ? "bg-emerald-500/15 text-emerald-400" : "bg-blue-500/15 text-blue-400")}>
+                                {tpl.channel === "whatsapp" ? "📱" : "📧"}
+                              </span>
+                              <span className="text-sm font-medium">{tpl.label}</span>
+                            </div>
+                            {me?.role === "admin" && (
+                              <div className="flex gap-1">
+                                <button onClick={() => { setEditingTplId(tpl.id); setEditTpl({ label: tpl.label, channel: tpl.channel, subject: tpl.subject ?? "", body: tpl.body }); }} className="p-1.5 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+                                <button onClick={() => handleDeleteTemplate(tpl.id)} className="p-1.5 rounded-lg hover:bg-red-500/15 text-muted-foreground hover:text-red-400 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground bg-background/50 rounded-lg p-2.5 whitespace-pre-wrap leading-relaxed line-clamp-3">{tpl.body}</p>
+                        </>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

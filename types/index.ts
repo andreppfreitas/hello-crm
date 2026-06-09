@@ -179,6 +179,33 @@ export interface Reminder {
   authorName: string;
 }
 
+export interface ActivityEntry {
+  id: string;
+  userId: string;
+  userName: string;
+  action:
+    | "lead_created"
+    | "lead_deleted"
+    | "stage_changed"
+    | "note_added"
+    | "temperature_changed"
+    | "consultant_changed"
+    | "lead_updated";
+  leadId: string;
+  leadName: string;
+  details?: string; // e.g. "New Lead → Waiting Response"
+  timestamp: string;
+}
+
+export interface CustomTemplate {
+  id: string;
+  label: string;
+  channel: "whatsapp" | "email";
+  subject?: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface DashboardStats {
   total: number;
   hot: number;

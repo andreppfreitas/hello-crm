@@ -1,7 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbGetAllLeads, dbSaveLead, dbLeadsCount } from "@/lib/db/leads-db";
 import { generateSeedLeads, buildNewLead } from "@/lib/lead-builder";
+import { dbLogActivity } from "@/lib/db/activity-db";
+import { SESSION_COOKIE } from "@/lib/auth-config";
+import { dbGetUser } from "@/lib/db/users-db";
 import type { Lead } from "@/types";
+
+async function getSessionUser(request: NextRequest) {
+  const session = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!session) return null;
+  const [userId] = session.split(":");
+  return dbGetUser(userId);
+}
 
 // Auto-seed if DB is empty
 async function ensureSeeded() {
@@ -26,9 +36,24 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    // Accept either a pre-built lead (from client optimistic) or raw data
     const lead: Lead = body.id ? body : buildNewLead(body);
     await dbSaveLead(lead);
+
+    // Log activity
+    const me = await getSessionUser(request);
+    if (me) {
+      await dbLogActivity({
+        id: `act_${Date.now()}`,
+        userId: me.id,
+        userName: me.displayName,
+        action: "lead_created",
+        leadId: lead.id,
+        leadName: lead.fullName,
+        details: `Atribuído a ${lead.assignedConsultant}`,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
     return NextResponse.json({ lead }, { status: 201 });
   } catch (e) {
     console.error("POST /api/leads", e);

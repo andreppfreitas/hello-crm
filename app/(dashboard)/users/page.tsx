@@ -10,8 +10,9 @@ import { cn, initials } from "@/lib/utils";
 import Link from "next/link";
 import {
   Users, Kanban, TrendingUp, ChevronRight,
-  Trophy, Flame, Clock, Building2, Crown,
+  Trophy, Flame, Clock, Building2, Crown, BarChart2,
 } from "lucide-react";
+import { PHASE_ORDER, PHASE_CONFIG, STAGE_CONFIG } from "@/lib/constants";
 
 interface UserRecord {
   id: string;
@@ -305,6 +306,83 @@ function ConsultantDetail({
                 </div>
               </Link>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Conversion funnel */}
+      {userLeads.length > 0 && (
+        <div className="glass-card rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border/50">
+            <BarChart2 className="w-4 h-4 text-primary" />
+            <h4 className="text-sm font-semibold text-foreground">Funil de Conversão</h4>
+            {userLeads.filter(l => l.stage === "closed_won").length > 0 && (
+              <span className="ml-auto text-xs font-semibold text-emerald-400">
+                {Math.round((userLeads.filter(l => l.stage === "closed_won").length / userLeads.length) * 100)}% taxa de conversão
+              </span>
+            )}
+          </div>
+          <div className="p-4 space-y-2">
+            {PHASE_ORDER.filter(p => p !== "closed").map((phase) => {
+              const phaseCfg = PHASE_CONFIG[phase];
+              const count = userLeads.filter(l => STAGE_CONFIG[l.stage]?.phase === phase).length;
+              const pct = userLeads.length > 0 ? (count / userLeads.length) * 100 : 0;
+              return (
+                <div key={phase} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className={cn("font-medium", phaseCfg.color)}>{phaseCfg.label}</span>
+                    <span className="text-muted-foreground">{count} lead{count !== 1 ? "s" : ""}</span>
+                  </div>
+                  <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all bg-primary/60"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            {/* Closed row */}
+            {(() => {
+              const won = userLeads.filter(l => l.stage === "closed_won").length;
+              const lost = userLeads.filter(l => l.stage === "closed_lost").length;
+              return (
+                <div className="flex gap-3 pt-1">
+                  <div className="flex-1 bg-emerald-500/10 rounded-lg p-2 text-center">
+                    <p className="text-base font-bold text-emerald-400">{won}</p>
+                    <p className="text-[10px] text-muted-foreground">Fechados ganhos</p>
+                  </div>
+                  <div className="flex-1 bg-red-500/10 rounded-lg p-2 text-center">
+                    <p className="text-base font-bold text-red-400">{lost}</p>
+                    <p className="text-[10px] text-muted-foreground">Fechados perdidos</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Temperature breakdown */}
+      {userLeads.length > 0 && (
+        <div className="glass-card rounded-xl p-4">
+          <h4 className="text-sm font-semibold text-foreground mb-3">Temperatura das Leads</h4>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { temp: "hot", label: "🔥 Hot", color: "text-red-400", bg: "bg-red-500/10" },
+              { temp: "warm", label: "☀️ Warm", color: "text-orange-400", bg: "bg-orange-500/10" },
+              { temp: "cold", label: "❄️ Cold", color: "text-blue-400", bg: "bg-blue-500/10" },
+            ] as const).map(({ temp, label, color, bg }) => {
+              const cnt = userLeads.filter(l => l.temperature === temp).length;
+              const pct = userLeads.length > 0 ? Math.round((cnt / userLeads.length) * 100) : 0;
+              return (
+                <div key={temp} className={cn("rounded-lg p-3 text-center", bg)}>
+                  <p className={cn("text-xl font-bold", color)}>{cnt}</p>
+                  <p className="text-[10px] text-muted-foreground">{label}</p>
+                  <p className="text-[10px] text-muted-foreground">{pct}%</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

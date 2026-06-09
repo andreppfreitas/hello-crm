@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbGetLead, dbSaveLead, dbDeleteLead } from "@/lib/db/leads-db";
-import type { Lead } from "@/types";
-import { CONSULTANTS } from "@/lib/constants";
-import type { PipelineStage, StageChangeEvent } from "@/types";
+import { dbLogActivity } from "@/lib/db/activity-db";
+import { SESSION_COOKIE } from "@/lib/auth-config";
+import { dbGetUser } from "@/lib/db/users-db";
+import { STAGE_CONFIG } from "@/lib/constants";
+import type { Lead, PipelineStage, StageChangeEvent } from "@/types";
+
+async function getSessionUser(request: NextRequest) {
+  const session = request.cookies.get(SESSION_COOKIE)?.value;
+  if (!session) return null;
+  const [userId] = session.split(":");
+  return dbGetUser(userId);
+}
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,6 +28,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const data: Partial<Lead> = await request.json();
     const now = new Date().toISOString();
+    const me = await getSessionUser(request);
+    const changedBy = me?.displayName ?? data.assignedConsultant ?? "Sistema";
 
     let updated: Lead = { ...existing, ...data, updatedAt: now };
 
@@ -29,13 +40,56 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         fromStage: existing.stage,
         toStage: data.stage,
         changedAt: now,
-        changedBy: data.assignedConsultant ?? CONSULTANTS[0],
+        changedBy,
       };
       updated.stageChanges = [change, ...(existing.stageChanges ?? [])];
       updated.stageHistory = existing.stageHistory.map((h) =>
         h.stage === existing.stage && !h.exitedAt ? { ...h, exitedAt: now } : h
       );
       updated.stageHistory = [...updated.stageHistory, { stage: data.stage as PipelineStage, enteredAt: now }];
+
+      // Log stage change
+      if (me) {
+        await dbLogActivity({
+          id: `act_${Date.now()}`,
+          userId: me.id,
+          userName: me.displayName,
+          action: "stage_changed",
+          leadId: existing.id,
+          leadName: existing.fullName,
+          details: `${STAGE_CONFIG[existing.stage].label} → ${STAGE_CONFIG[data.stage].label}`,
+          timestamp: now,
+        });
+      }
+    }
+
+    // Log temperature change
+    if (data.temperature && data.temperature !== existing.temperature && me) {
+      await dbLogActivity({
+        id: `act_${Date.now() + 1}`,
+        userId: me.id,
+        userName: me.displayName,
+        action: "temperature_changed",
+        leadId: existing.id,
+        leadName: existing.fullName,
+        details: `${existing.temperature} → ${data.temperature}`,
+        timestamp: now,
+      });
+    }
+
+    // Log note added (notesList grows)
+    if (data.notesList && data.notesList.length > (existing.notesList?.length ?? 0) && me) {
+      const newest = data.notesList[0];
+      await dbLogActivity({
+        id: `act_${Date.now() + 2}`,
+        userId: me.id,
+        userName: me.displayName,
+        action: "note_added",
+        leadId: existing.id,
+        leadName: existing.fullName,
+        details: newest?.content?.slice(0, 80),
+        timestamp: now,
+      });
     }
 
     await dbSaveLead(updated);
@@ -46,8 +100,21 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const existing = await dbGetLead(id);
+  const me = await getSessionUser(request);
+  if (existing && me) {
+    await dbLogActivity({
+      id: `act_${Date.now()}`,
+      userId: me.id,
+      userName: me.displayName,
+      action: "lead_deleted",
+      leadId: id,
+      leadName: existing.fullName,
+      timestamp: new Date().toISOString(),
+    });
+  }
   await dbDeleteLead(id);
   return NextResponse.json({ success: true });
 }
