@@ -243,10 +243,10 @@ function LeadsInner() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
-  const [showFilters, setShowFilters] = useState(false);
+  const [showFilters, setShowFilters] = useState(!!searchParams.get("consultant"));
   const [filterTemp, setFilterTemp] = useState<LeadTemperature | "">("");
   const [filterStage, setFilterStage] = useState<PipelineStage | "">("");
-  const [filterConsultant, setFilterConsultant] = useState("");
+  const [filterConsultant, setFilterConsultant] = useState(searchParams.get("consultant") ?? "");
   const [filterCity, setFilterCity] = useState("");
   const [filterCourse, setFilterCourse] = useState("");
   const [sortField, setSortField] = useState<"createdAt" | "fullName" | "temperature" | "score">("createdAt");

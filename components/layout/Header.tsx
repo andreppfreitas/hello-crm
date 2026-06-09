@@ -6,6 +6,7 @@ import { PlusCircle, Search, Bell, LogOut, ChevronDown, Menu } from "lucide-reac
 import { Input } from "@/components/ui/input";
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -41,6 +42,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -138,7 +140,7 @@ export function Header({ onMenuToggle }: HeaderProps) {
             className="flex items-center gap-1.5 h-8 pl-2 pr-2 rounded-lg hover:bg-white/5 transition-colors min-h-[44px]"
           >
             <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-bold">
-              A
+              {user?.displayName?.split(" ").map((n) => n[0]).slice(0, 2).join("") ?? "?"}
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground hidden sm:block" />
           </button>
@@ -146,8 +148,8 @@ export function Header({ onMenuToggle }: HeaderProps) {
           {userMenuOpen && (
             <div className="absolute right-0 top-full mt-1.5 w-48 glass-card rounded-xl border border-border shadow-xl overflow-hidden z-50">
               <div className="px-3 py-2.5 border-b border-border">
-                <p className="text-xs font-medium text-foreground">André Perez</p>
-                <p className="text-xs text-muted-foreground">Admin</p>
+                <p className="text-xs font-medium text-foreground">{user?.displayName ?? "..."}</p>
+                <p className="text-xs text-muted-foreground capitalize">{user?.role === "admin" ? "Admin" : "Consultor"}</p>
               </div>
               <Link
                 href="/settings"

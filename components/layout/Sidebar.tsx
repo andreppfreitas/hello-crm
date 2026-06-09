@@ -16,9 +16,11 @@ import {
   Sparkles,
   Upload,
   X,
+  UserCog,
 } from "lucide-react";
 import { useCRM } from "@/contexts/CRMContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { isOverdue } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -33,6 +35,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { reminders } = useCRM();
   const { t } = useLanguage();
+  const { user } = useAuth();
 
   const NAV_ITEMS = [
     { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
@@ -43,6 +46,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     { href: "/briefing", label: t("briefing"), icon: Sparkles },
     { href: "/reports", label: t("reports"), icon: BarChart3 },
     { href: "/import", label: t("import"), icon: Upload },
+    ...(user?.role === "admin" ? [{ href: "/users", label: "Equipe", icon: UserCog }] : []),
     { href: "/settings", label: t("settings"), icon: Settings },
   ];
   const overdueCount = reminders.filter((r) => !r.completed && isOverdue(r.dueAt)).length;

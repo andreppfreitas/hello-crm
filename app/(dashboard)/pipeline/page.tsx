@@ -19,7 +19,8 @@ import {
   type DragStartEvent,
   type DragOverEvent,
 } from "@dnd-kit/core";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { MessageSquare, CheckSquare, Clock, Phone } from "lucide-react";
 
@@ -174,7 +175,17 @@ function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isD
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function PipelinePage() {
+  return (
+    <Suspense>
+      <PipelineInner />
+    </Suspense>
+  );
+}
+
+function PipelineInner() {
   const { leads, updateLead } = useCRM();
+  const searchParams = useSearchParams();
+  const consultantFilter = searchParams.get("consultant") ?? "";
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeOverId, setActiveOverId] = useState<string | null>(null);
 
@@ -220,7 +231,15 @@ export default function PipelinePage() {
   }
 
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4 h-full scrollbar-thin touch-pan-x select-none">
+    <div className="flex flex-col gap-3 h-full overflow-hidden">
+      {consultantFilter && (
+        <div className="flex items-center gap-2 px-1 flex-shrink-0">
+          <span className="text-xs text-muted-foreground">Pipeline de:</span>
+          <span className="text-xs font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-full">{consultantFilter}</span>
+          <Link href="/pipeline" className="text-xs text-muted-foreground hover:text-foreground underline">Limpar filtro</Link>
+        </div>
+      )}
+    <div className="flex gap-4 overflow-x-auto pb-4 flex-1 scrollbar-thin touch-pan-x select-none">
       <DndContext
         sensors={sensors}
         onDragStart={handleDragStart}
@@ -229,7 +248,10 @@ export default function PipelinePage() {
       >
         {PHASE_ORDER.map((phase) => {
           const cfg = PHASE_CONFIG[phase];
-          const phaseLeads = leads.filter((l) => STAGE_CONFIG[l.stage].phase === phase);
+          const visibleLeads = consultantFilter
+            ? leads.filter((l) => l.assignedConsultant === consultantFilter)
+            : leads;
+          const phaseLeads = visibleLeads.filter((l) => STAGE_CONFIG[l.stage].phase === phase);
 
           return (
             <div key={phase} className="flex-shrink-0 w-72 flex flex-col gap-2">
@@ -294,6 +316,7 @@ export default function PipelinePage() {
           )}
         </DragOverlay>
       </DndContext>
+    </div>
     </div>
   );
 }

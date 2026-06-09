@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const me = await getSessionUser(request);
   if (!me || me.role !== "admin") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  const { username, displayName, password, role } = await request.json();
+  const { username, displayName, password, role, office } = await request.json();
   if (!username || !displayName || !password) return NextResponse.json({ error: "Campos obrigatórios" }, { status: 400 });
   const newUser: DBUser = {
     id: `user_${Date.now()}`,
@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
     displayName,
     passwordHash: hashPassword(password),
     role: role ?? "consultant",
+    office: office ?? undefined,
     createdAt: new Date().toISOString(),
   };
   await dbSaveUser(newUser);
