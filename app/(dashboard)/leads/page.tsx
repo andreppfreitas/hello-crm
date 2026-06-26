@@ -249,7 +249,7 @@ function LeadsInner() {
   const [filterConsultant, setFilterConsultant] = useState(searchParams.get("consultant") ?? "");
   const [filterCity, setFilterCity] = useState("");
   const [filterCourse, setFilterCourse] = useState("");
-  const [sortField, setSortField] = useState<"createdAt" | "fullName" | "temperature" | "score">("createdAt");
+  const [sortField, setSortField] = useState<"createdAt" | "fullName" | "temperature" | "score" | "visaExpiryDate">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -276,6 +276,15 @@ function LeadsInner() {
     if (filterCourse) list = list.filter((l) => l.courseInterest.includes(filterCourse));
     list.sort((a, b) => {
       if (sortField === "score") return sortDir === "asc" ? (a.score ?? 0) - (b.score ?? 0) : (b.score ?? 0) - (a.score ?? 0);
+      if (sortField === "visaExpiryDate") {
+        // Leads without a visa expiry date always sort to the bottom, regardless of direction
+        const at = a.visaExpiryDate ? new Date(a.visaExpiryDate).getTime() : Infinity;
+        const bt = b.visaExpiryDate ? new Date(b.visaExpiryDate).getTime() : Infinity;
+        if (at === Infinity && bt === Infinity) return 0;
+        if (at === Infinity) return 1;
+        if (bt === Infinity) return -1;
+        return sortDir === "asc" ? at - bt : bt - at;
+      }
       const av = String(a[sortField as keyof typeof a]);
       const bv = String(b[sortField as keyof typeof b]);
       return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
@@ -325,12 +334,12 @@ function LeadsInner() {
     }
   }
 
-  function SortTh({ field, label }: { field: typeof sortField; label: string }) {
+  function SortTh({ field, label, defaultDir = "desc" }: { field: typeof sortField; label: string; defaultDir?: "asc" | "desc" }) {
     const active = sortField === field;
     return (
       <th
         className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer select-none hover:text-foreground transition-colors"
-        onClick={() => { active ? setSortDir((d) => d === "asc" ? "desc" : "asc") : (setSortField(field), setSortDir("desc")); }}
+        onClick={() => { active ? setSortDir((d) => d === "asc" ? "desc" : "asc") : (setSortField(field), setSortDir(defaultDir)); }}
       >
         <span className="flex items-center gap-1">
           {label}
@@ -480,7 +489,7 @@ function LeadsInner() {
                   />
                 </th>
                 <SortTh field="fullName" label={t("name")} />
-                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("visaExpiry")}</th>
+                <SortTh field="visaExpiryDate" label={t("visaExpiry")} defaultDir="asc" />
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("phone")}</th>
                 <SortTh field="temperature" label="Temp" />
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("stage")}</th>
