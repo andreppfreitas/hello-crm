@@ -13,6 +13,20 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
+const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  <div className="glass-card rounded-xl p-5 space-y-4">
+    <h3 className="text-sm font-semibold text-foreground border-b border-border pb-3">{title}</h3>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>
+  </div>
+);
+
+const Field = ({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) => (
+  <div className={cn("flex flex-col gap-1.5", full && "sm:col-span-2")}>
+    <Label className="text-xs text-muted-foreground">{label}</Label>
+    {children}
+  </div>
+);
+
 export default function NewLeadPage() {
   const router = useRouter();
   const { addLead } = useCRM();
@@ -47,20 +61,6 @@ export default function NewLeadPage() {
     toast.success(`${lead.fullName} added to CRM`);
     router.push(`/leads/${lead.id}`);
   }
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div className="glass-card rounded-xl p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-foreground border-b border-border pb-3">{title}</h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">{children}</div>
-    </div>
-  );
-
-  const Field = ({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) => (
-    <div className={cn("flex flex-col gap-1.5", full && "sm:col-span-2")}>
-      <Label className="text-xs text-muted-foreground">{label}</Label>
-      {children}
-    </div>
-  );
 
   return (
     <div className="max-w-3xl mx-auto space-y-5">
