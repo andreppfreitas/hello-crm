@@ -36,8 +36,7 @@ export default function ReportsPage() {
   const consultantData = CONSULTANTS.map((name) => ({
     name: name.split(" ")[0],
     total: leads.filter((l) => l.assignedConsultant === name).length,
-    won: leads.filter((l) => l.assignedConsultant === name && l.stage === "closed_won").length,
-    lost: leads.filter((l) => l.assignedConsultant === name && l.stage === "closed_lost").length,
+    visa: leads.filter((l) => l.assignedConsultant === name && STAGE_CONFIG[l.stage]?.phase === "visa").length,
   }));
 
   const sourceData = ["Facebook Group", "Instagram", "Referral", "Website", "WhatsApp", "Walk-in", "Event", "LinkedIn", "Other"]
@@ -49,7 +48,7 @@ export default function ReportsPage() {
   const trendData = months.map((month, i) => ({
     month,
     leads: Math.floor(Math.random() * 20) + 10 + i * 2,
-    closedWon: Math.floor(Math.random() * 8) + 2 + i,
+    visaProcess: Math.floor(Math.random() * 5) + 1 + i,
   }));
 
   // Funnel data
@@ -90,8 +89,8 @@ export default function ReportsPage() {
   ];
   const totalForecast = forecastData.reduce((s, d) => s + d.amount, 0);
 
-  const conversionRate = leads.length > 0
-    ? Math.round((leads.filter((l) => l.stage === "closed_won").length / leads.length) * 100)
+  const visaRate = leads.length > 0
+    ? Math.round((leads.filter((l) => STAGE_CONFIG[l.stage]?.phase === "visa").length / leads.length) * 100)
     : 0;
 
   const TOOLTIP_STYLE = { background: "#1e2a3a", border: "1px solid #334155", borderRadius: 8, fontSize: 12 };
@@ -102,9 +101,9 @@ export default function ReportsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Leads", value: leads.length, color: "text-blue-400" },
-          { label: "Closed Won", value: leads.filter((l) => l.stage === "closed_won").length, color: "text-emerald-400" },
-          { label: "Closed Lost", value: leads.filter((l) => l.stage === "closed_lost").length, color: "text-red-400" },
-          { label: "Conversion Rate", value: `${conversionRate}%`, color: "text-primary" },
+          { label: "Hot Leads", value: leads.filter((l) => l.temperature === "hot").length, color: "text-red-400" },
+          { label: "Em Processo de Visto", value: leads.filter((l) => STAGE_CONFIG[l.stage]?.phase === "visa").length, color: "text-emerald-400" },
+          { label: "Taxa de Visto", value: `${visaRate}%`, color: "text-primary" },
         ].map(({ label, value, color }) => (
           <div key={label} className="glass-card rounded-xl p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">{label}</p>
@@ -164,7 +163,7 @@ export default function ReportsPage() {
               <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={TOOLTIP_STYLE} />
               <Area type="monotone" dataKey="leads" stroke="#3b82f6" fill="url(#colorLeads)" name="New Leads" />
-              <Area type="monotone" dataKey="closedWon" stroke="#10b981" fill="url(#colorWon)" name="Closed Won" />
+              <Area type="monotone" dataKey="visaProcess" stroke="#10b981" fill="url(#colorWon)" name="Em Visto" />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
             </AreaChart>
           </ResponsiveContainer>
@@ -307,8 +306,7 @@ export default function ReportsPage() {
               <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={TOOLTIP_STYLE} />
               <Bar dataKey="total" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Total" />
-              <Bar dataKey="won" fill="#10b981" radius={[4, 4, 0, 0]} name="Won" />
-              <Bar dataKey="lost" fill="#f43f5e" radius={[4, 4, 0, 0]} name="Lost" />
+              <Bar dataKey="visa" fill="#10b981" radius={[4, 4, 0, 0]} name="Em Visto" />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 12 }} />
             </BarChart>
           </ResponsiveContainer>

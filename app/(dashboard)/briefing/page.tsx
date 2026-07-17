@@ -45,7 +45,7 @@ function LeadRow({ lead, meta }: { lead: ReturnType<typeof useCRM>["leads"][0]; 
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-foreground truncate">{lead.fullName}</p>
-          <p className="text-xs text-muted-foreground truncate">{STAGE_CONFIG[lead.stage].label}</p>
+          <p className="text-xs text-muted-foreground truncate">{STAGE_CONFIG[lead.stage]?.label ?? lead.stage}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <TemperatureBadge temp={lead.temperature} />
@@ -84,10 +84,11 @@ export default function BriefingPage() {
     return days >= 7;
   });
 
-  // 2. All overdue tasks (any lead, any stage)
-  const overdueTaskLeads = leads.filter((l) =>
-    l.tasks.some((t) => !t.completed && t.dueDate && isOverdue(t.dueDate))
-  );
+  // 2. Overdue tasks — exclude visa phase (Em Processo de Visto)
+  const overdueTaskLeads = leads.filter((l) => {
+    if (STAGE_CONFIG[l.stage]?.phase === "visa") return false;
+    return l.tasks.some((t) => !t.completed && t.dueDate && isOverdue(t.dueDate));
+  });
 
   // 3. Payments due this week
   const paymentsDueThisWeek = leads.filter((l) =>
@@ -98,12 +99,13 @@ export default function BriefingPage() {
     })
   );
 
-  // 4. Leads stuck in same stage > 14 days
+  // 4. Leads stuck in same stage > 14 days — exclude visa phase and closed
   const stuckLeads = leads.filter((l) => {
-    const entry = l.stageHistory.find((h) => h.stage === l.stage && !h.exitedAt);
+    if (STAGE_CONFIG[l.stage]?.phase === "visa") return false;
+const entry = l.stageHistory.find((h) => h.stage === l.stage && !h.exitedAt);
     if (!entry) return false;
     const days = (now.getTime() - new Date(entry.enteredAt).getTime()) / 86400000;
-    return days > 14 && !["closed_won", "closed_lost"].includes(l.stage);
+    return days > 14;
   });
 
   // 5. Meetings this week

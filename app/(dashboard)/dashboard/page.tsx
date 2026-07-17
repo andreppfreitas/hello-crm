@@ -9,7 +9,7 @@ import { formatDate } from "@/lib/utils";
 import { CITIES, COURSES, CONSULTANTS, STAGE_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG } from "@/lib/constants";
 import {
   Users, Flame, MessageSquare, Calendar, FileText,
-  CreditCard, Globe, Trophy, XCircle,
+  CreditCard, Globe,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -31,7 +31,7 @@ export default function DashboardPage() {
   const consultantData = CONSULTANTS.map((name) => ({
     name: name.split(" ")[0],
     leads: leads.filter((l) => l.assignedConsultant === name).length,
-    closed: leads.filter((l) => l.assignedConsultant === name && l.stage === "closed_won").length,
+    visa: leads.filter((l) => l.assignedConsultant === name && STAGE_CONFIG[l.stage]?.phase === "visa").length,
   }));
 
   const courseData = COURSES.slice(0, 6).map((course) => ({
@@ -42,7 +42,7 @@ export default function DashboardPage() {
   const hotLeads = leads.filter((l) => l.temperature === "hot").slice(0, 5);
 
   const now = Date.now();
-  const activeLeadsList = leads.filter((l) => l.stage !== "closed_won" && l.stage !== "closed_lost" && (!l.groupId || l.groupRole === "primary"));
+  const activeLeadsList = leads.filter((l) => !l.groupId || l.groupRole === "primary");
 
   // Leads in visa phase = "em processo" — exclude from sales alerts, track separately
   const VISA_PHASE_STAGES = ["visa_lodged", "medical_requested", "visa_granted"];
@@ -211,8 +211,6 @@ export default function DashboardPage() {
         <StatCard title="In Enrollment" value={stats.applicationsInProgress} icon={FileText} iconColor="text-purple-400" />
         <StatCard title="Payments Pending" value={stats.paymentsPending} icon={CreditCard} iconColor="text-yellow-400" />
         <StatCard title="Visa Pending" value={stats.visaPending} icon={Globe} iconColor="text-cyan-400" />
-        <StatCard title={t("closedWon")} value={stats.closedWon} icon={Trophy} iconColor="text-emerald-400" />
-        <StatCard title="Closed Lost" value={stats.closedLost} icon={XCircle} iconColor="text-red-400" />
       </div>
 
       {/* Charts row */}
@@ -258,7 +256,7 @@ export default function DashboardPage() {
               <YAxis tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: "#1e2a3a", border: "1px solid #334155", borderRadius: 8 }} />
               <Bar dataKey="leads" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Total" />
-              <Bar dataKey="closed" fill="#10b981" radius={[4, 4, 0, 0]} name="Closed Won" />
+              <Bar dataKey="visa" fill="#10b981" radius={[4, 4, 0, 0]} name="Em Visto" />
             </BarChart>
           </ResponsiveContainer>
         </div>

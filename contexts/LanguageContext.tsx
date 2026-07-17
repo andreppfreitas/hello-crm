@@ -59,7 +59,6 @@ const translations = {
     totalLeads: "Total de Leads",
     hotLeads: "Leads Quentes",
     meetingsScheduled: "Reuniões Agendadas",
-    closedWon: "Fechados",
     waitingReply: "Aguardando Resposta",
     // common
     loading: "Carregando...",
@@ -184,7 +183,6 @@ const translations = {
     totalLeads: "Total Leads",
     hotLeads: "Hot Leads",
     meetingsScheduled: "Meetings Scheduled",
-    closedWon: "Closed Won",
     waitingReply: "Waiting Reply",
     // common
     loading: "Loading...",

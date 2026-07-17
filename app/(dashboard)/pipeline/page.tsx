@@ -339,7 +339,7 @@ function PipelineInner() {
                     const partnerName = groupPartners.map((p) => p.fullName.split(" ")[0]).join(", ");
                     const sortedStages = ALL_STAGES.slice().sort((a, b) => STAGE_CONFIG[a].order - STAGE_CONFIG[b].order);
                     const currentIdx = sortedStages.indexOf(lead.stage);
-                    const nextStage = sortedStages.find((s, i) => i > currentIdx && s !== "closed_won" && s !== "closed_lost") ?? null;
+                    const nextStage = sortedStages.find((s, i) => i > currentIdx) ?? null;
                     return (
                       <DraggableCard
                         key={lead.id}

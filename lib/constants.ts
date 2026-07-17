@@ -40,9 +40,6 @@ export const STAGE_CONFIG: Record<
   visa_lodged:               { label: "Visa Application Lodged",               phase: "visa",       color: "text-blue-300",     bg: "bg-blue-500/20 border-blue-500/30",      dot: "bg-blue-400",     order: 27 },
   medical_requested:         { label: "Medical Examination Requested",         phase: "visa",       color: "text-indigo-300",   bg: "bg-indigo-500/20 border-indigo-500/30",  dot: "bg-indigo-400",   order: 28 },
   visa_granted:              { label: "Visa Granted",                          phase: "visa",       color: "text-emerald-300",  bg: "bg-emerald-500/20 border-emerald-500/30",dot: "bg-emerald-400",  order: 29 },
-  // Closed
-  closed_won:                { label: "Closed Won",                            phase: "closed",     color: "text-emerald-300",  bg: "bg-emerald-500/20 border-emerald-500/30",dot: "bg-emerald-400",  order: 30 },
-  closed_lost:               { label: "Closed Lost",                           phase: "closed",     color: "text-red-300",      bg: "bg-red-500/20 border-red-500/30",        dot: "bg-red-400",      order: 31 },
 };
 
 export const PHASE_CONFIG: Record<
@@ -56,10 +53,9 @@ export const PHASE_CONFIG: Record<
   documents:  { label: "Documents",   color: "text-teal-300",     headerBg: "bg-teal-500/10 border-teal-500/20",      stages: ["documents_signed", "visa_checklist_sent", "student_uploading_docs", "gs_letter_draft_sent", "gs_letter_approved", "documents_complete"] },
   payments:   { label: "Payments",    color: "text-yellow-300",   headerBg: "bg-yellow-500/10 border-yellow-500/20",  stages: ["coe_deposit_paid", "coe_issued", "coe_confirmed", "oshc_payment", "oshc_issued", "visa_fee_paid"] },
   visa:       { label: "Visa",        color: "text-emerald-300",  headerBg: "bg-emerald-500/10 border-emerald-500/20",stages: ["visa_lodged", "medical_requested", "visa_granted"] },
-  closed:     { label: "Closed",      color: "text-gray-300",     headerBg: "bg-gray-500/10 border-gray-500/20",      stages: ["closed_won", "closed_lost"] },
 };
 
-export const PHASE_ORDER: PhaseGroup[] = ["leads", "qualifying", "proposal", "enrollment", "documents", "payments", "visa", "closed"];
+export const PHASE_ORDER: PhaseGroup[] = ["leads", "qualifying", "proposal", "enrollment", "documents", "payments", "visa"];
 
 export const ALL_STAGES: PipelineStage[] = Object.keys(STAGE_CONFIG) as PipelineStage[];
 
@@ -133,8 +129,6 @@ export const STAGE_BEHAVIOR_CONFIG: Record<
   visa_lodged:               { defaultNextAction: null,                   defaultWaitingFor: "home_affairs",     responsibleTeam: "visa_team",  checklist: ["Visa lodged successfully", "Confirmation email sent"] },
   medical_requested:         { defaultNextAction: "email_student",        defaultWaitingFor: "student",          responsibleTeam: "visa_team",  checklist: [] },
   visa_granted:              { defaultNextAction: "notify_student",       defaultWaitingFor: null,               responsibleTeam: "consultant", checklist: [] },
-  closed_won:                { defaultNextAction: null,                   defaultWaitingFor: null,               responsibleTeam: "consultant", checklist: [] },
-  closed_lost:               { defaultNextAction: null,                   defaultWaitingFor: null,               responsibleTeam: "consultant", checklist: [] },
 };
 
 // Legacy stage IDs (pre-July 2026 pipeline) — keeps Redis leads from crashing
@@ -188,8 +182,6 @@ export const TASK_TEMPLATES: Record<PipelineStage, string[]> = {
   visa_lodged:               ["Submit visa application", "Provide confirmation to student", "Set expected decision date"],
   medical_requested:         ["Notify student about medical requirement", "Provide list of panel physicians", "Follow up on medical completion"],
   visa_granted:              ["Notify student of visa grant", "Send pre-departure checklist", "Confirm accommodation arranged"],
-  closed_won:                ["Archive student file", "Request Google review", "Add to alumni network"],
-  closed_lost:               ["Record reason for loss", "Send farewell message", "Keep in newsletter list"],
 };
 
 export const CONSULTANTS = [
@@ -473,20 +465,6 @@ export const STAGE_TEMPLATES: Record<PipelineStage, MessageTemplate[]> = {
       channel: "email",
       subject: "🎉 VISTO APROVADO! Parabéns, {name}!",
       body: "Olá {name},\n\n🎊 PARABÉNS! Seu visto de estudante foi APROVADO!\n\nEsta é uma conquista incrível e estamos muito felizes em fazer parte dessa jornada com você! 🇦🇺\n\nEm breve você receberá todas as instruções finais para o embarque.\n\nBoa viagem e bem-vindo(a) à Austrália! 🦘\n\n{consultant}\nHello Australia",
-    },
-  ],
-  closed_won: [
-    {
-      label: "Parabéns - Fechado com sucesso",
-      channel: "whatsapp",
-      body: "🎊🎉 {name}! Foi uma honra acompanhar sua jornada! Espero que você curta muito a Austrália! Não deixa de me contar como estão as coisas por lá! 🇦🇺🦘💛",
-    },
-  ],
-  closed_lost: [
-    {
-      label: "Mensagem de despedida",
-      channel: "whatsapp",
-      body: "Oi {name}! Entendo que o momento não é o ideal agora, sem problema! 😊 Se em algum momento seus planos mudarem e quiser retomar o processo de estudar na Austrália, é só me chamar! Tudo de bom! 🙏",
     },
   ],
 };

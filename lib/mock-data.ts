@@ -286,7 +286,5 @@ export function getMockDashboardStats() {
     applicationsInProgress: leads.filter((l) => STAGE_CONFIG[l.stage].order >= 8 && STAGE_CONFIG[l.stage].order <= 12).length,
     paymentsPending: leads.filter((l) => l.payments.some((p) => p.status === "pending")).length,
     visaPending: leads.filter((l) => ["visa_lodged", "medical_requested", "visa_granted"].includes(l.stage)).length,
-    closedWon: leads.filter((l) => l.stage === "closed_won").length,
-    closedLost: leads.filter((l) => l.stage === "closed_lost").length,
   };
 }

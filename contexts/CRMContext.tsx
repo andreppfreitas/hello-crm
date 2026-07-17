@@ -17,7 +17,7 @@ function activeLeads(leads: Lead[]): Lead[] {
 }
 
 function computeStats(leads: Lead[]): DashboardStats {
-  const active = activeLeads(leads);
+  const active = activeLeads(leads).filter((l) => STAGE_CONFIG[l.stage]?.phase !== "visa");
   return {
     total: active.length,
     hot: active.filter((l) => l.temperature === "hot").length,
@@ -30,8 +30,6 @@ function computeStats(leads: Lead[]): DashboardStats {
     visaPending: active.filter((l) =>
       ["visa_lodged", "medical_requested", "visa_granted"].includes(l.stage)
     ).length,
-    closedWon: active.filter((l) => l.stage === "closed_won").length,
-    closedLost: active.filter((l) => l.stage === "closed_lost").length,
   };
 }
 

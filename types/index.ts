@@ -36,10 +36,7 @@ export type PipelineStage =
   // Visa
   | "visa_lodged"
   | "medical_requested"
-  | "visa_granted"
-  // Closed
-  | "closed_won"
-  | "closed_lost";
+  | "visa_granted";
 
 export type PhaseGroup =
   | "leads"
@@ -48,8 +45,7 @@ export type PhaseGroup =
   | "enrollment"
   | "documents"
   | "payments"
-  | "visa"
-  | "closed";
+  | "visa";
 
 export type NextAction =
   | "call_student"
@@ -267,6 +263,4 @@ export interface DashboardStats {
   applicationsInProgress: number;
   paymentsPending: number;
   visaPending: number;
-  closedWon: number;
-  closedLost: number;
 }

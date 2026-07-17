@@ -10,7 +10,7 @@ import { cn, initials } from "@/lib/utils";
 import Link from "next/link";
 import {
   Users, Kanban, TrendingUp, ChevronRight,
-  Trophy, Flame, Clock, Building2, Crown, BarChart2,
+  Flame, Clock, Building2, Crown, BarChart2,
 } from "lucide-react";
 import { PHASE_ORDER, PHASE_CONFIG, STAGE_CONFIG } from "@/lib/constants";
 
@@ -50,13 +50,11 @@ export default function UsersPage() {
     const userLeads = leads.filter(
       (l) => l.assignedConsultant === name && (!l.groupId || l.groupRole === "primary")
     );
-    const active = userLeads.filter((l) => !["closed_won", "closed_lost"].includes(l.stage));
     const hot = userLeads.filter((l) => l.temperature === "hot");
-    const closedWon = userLeads.filter((l) => l.stage === "closed_won");
-    const recentLeads = [...active]
+    const recentLeads = [...userLeads]
       .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
       .slice(0, 3);
-    return { total: userLeads.length, active: active.length, hot: hot.length, closedWon: closedWon.length, recentLeads };
+    return { total: userLeads.length, hot: hot.length, recentLeads };
   }
 
   const consultants = users.filter((u) => u.role === "consultant");
@@ -115,11 +113,10 @@ export default function UsersPage() {
                     </div>
                     <ChevronRight className={cn("w-4 h-4 text-muted-foreground transition-transform", isSelected && "rotate-90")} />
                   </div>
-                  <div className="grid grid-cols-3 gap-2 mt-3">
+                  <div className="grid grid-cols-2 gap-2 mt-3">
                     {[
-                      { label: "Leads", value: stats.active, icon: Users, color: "text-blue-400" },
+                      { label: "Leads", value: stats.total, icon: Users, color: "text-blue-400" },
                       { label: "Hot", value: stats.hot, icon: Flame, color: "text-red-400" },
-                      { label: "Fechados", value: stats.closedWon, icon: Trophy, color: "text-emerald-400" },
                     ].map(({ label, value, icon: Icon, color }) => (
                       <div key={label} className="bg-secondary/30 rounded-lg p-2 text-center">
                         <Icon className={cn("w-3.5 h-3.5 mx-auto mb-0.5", color)} />
@@ -167,11 +164,10 @@ export default function UsersPage() {
                         <ChevronRight className={cn("w-4 h-4 text-muted-foreground transition-transform", isSelected && "rotate-90")} />
                       </div>
                       {stats.total > 0 && (
-                        <div className="grid grid-cols-3 gap-2 mt-3">
+                        <div className="grid grid-cols-2 gap-2 mt-3">
                           {[
-                            { label: "Leads", value: stats.active, icon: Users, color: "text-blue-400" },
+                            { label: "Leads", value: stats.total, icon: Users, color: "text-blue-400" },
                             { label: "Hot", value: stats.hot, icon: Flame, color: "text-red-400" },
-                            { label: "Fechados", value: stats.closedWon, icon: Trophy, color: "text-emerald-400" },
                           ].map(({ label, value, icon: Icon, color }) => (
                             <div key={label} className="bg-secondary/30 rounded-lg p-2 text-center">
                               <Icon className={cn("w-3.5 h-3.5 mx-auto mb-0.5", color)} />
@@ -215,11 +211,7 @@ function ConsultantDetail({
   const userLeads = leads.filter(
     (l) => l.assignedConsultant === user.displayName && (!l.groupId || l.groupRole === "primary")
   );
-  const active = userLeads.filter((l) => !["closed_won", "closed_lost"].includes(l.stage));
   const recent = [...userLeads].sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()).slice(0, 10);
-
-  const byStage: Record<string, number> = {};
-  active.forEach((l) => { byStage[l.stage] = (byStage[l.stage] ?? 0) + 1; });
 
   return (
     <div className="space-y-4">
@@ -261,12 +253,11 @@ function ConsultantDetail({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Total de Leads", value: userLeads.length, icon: Users, color: "text-blue-400" },
-          { label: "Ativos", value: active.length, icon: TrendingUp, color: "text-cyan-400" },
           { label: "Hot", value: userLeads.filter((l) => l.temperature === "hot").length, icon: Flame, color: "text-red-400" },
-          { label: "Fechados", value: userLeads.filter((l) => l.stage === "closed_won").length, icon: Trophy, color: "text-emerald-400" },
+          { label: "Em Visto", value: userLeads.filter((l) => STAGE_CONFIG[l.stage]?.phase === "visa").length, icon: TrendingUp, color: "text-cyan-400" },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="glass-card rounded-xl p-3 text-center">
             <Icon className={cn("w-4 h-4 mx-auto mb-1", color)} />
@@ -316,14 +307,9 @@ function ConsultantDetail({
           <div className="flex items-center gap-2 px-5 py-3.5 border-b border-border/50">
             <BarChart2 className="w-4 h-4 text-primary" />
             <h4 className="text-sm font-semibold text-foreground">Funil de Conversão</h4>
-            {userLeads.filter(l => l.stage === "closed_won").length > 0 && (
-              <span className="ml-auto text-xs font-semibold text-emerald-400">
-                {Math.round((userLeads.filter(l => l.stage === "closed_won").length / userLeads.length) * 100)}% taxa de conversão
-              </span>
-            )}
           </div>
           <div className="p-4 space-y-2">
-            {PHASE_ORDER.filter(p => p !== "closed").map((phase) => {
+            {PHASE_ORDER.map((phase) => {
               const phaseCfg = PHASE_CONFIG[phase];
               const count = userLeads.filter(l => STAGE_CONFIG[l.stage]?.phase === phase).length;
               const pct = userLeads.length > 0 ? (count / userLeads.length) * 100 : 0;
@@ -342,23 +328,6 @@ function ConsultantDetail({
                 </div>
               );
             })}
-            {/* Closed row */}
-            {(() => {
-              const won = userLeads.filter(l => l.stage === "closed_won").length;
-              const lost = userLeads.filter(l => l.stage === "closed_lost").length;
-              return (
-                <div className="flex gap-3 pt-1">
-                  <div className="flex-1 bg-emerald-500/10 rounded-lg p-2 text-center">
-                    <p className="text-base font-bold text-emerald-400">{won}</p>
-                    <p className="text-[10px] text-muted-foreground">Fechados ganhos</p>
-                  </div>
-                  <div className="flex-1 bg-red-500/10 rounded-lg p-2 text-center">
-                    <p className="text-base font-bold text-red-400">{lost}</p>
-                    <p className="text-[10px] text-muted-foreground">Fechados perdidos</p>
-                  </div>
-                </div>
-              );
-            })()}
           </div>
         </div>
       )}
