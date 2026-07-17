@@ -1,28 +1,43 @@
 export type LeadTemperature = "hot" | "warm" | "cold";
 
 export type PipelineStage =
+  // Leads
   | "new_lead"
   | "first_contact"
-  | "waiting_response"
+  // Qualifying
+  | "initial_docs_requested"
+  | "initial_docs_received"
   | "meeting_scheduled"
   | "quotation_prepared"
+  // Proposal
   | "followup"
-  | "student_said_yes"
+  | "student_approved_quotation"
+  // Enrollment
   | "application_sent"
+  | "school_requested_docs"
   | "offer_letter_received"
+  | "final_quote_sent"
   | "contract_sent"
-  | "documents_signed"
   | "read_carefully_email"
-  | "first_payment"
-  | "school_deposit"
+  // Documents
+  | "documents_signed"
+  | "visa_checklist_sent"
+  | "student_uploading_docs"
+  | "gs_letter_draft_sent"
+  | "gs_letter_approved"
+  | "documents_complete"
+  // Payments
+  | "coe_deposit_paid"
+  | "coe_issued"
+  | "coe_confirmed"
   | "oshc_payment"
-  | "oshc_policy"
-  | "visa_payment"
-  | "visa_checklist_call"
-  | "statement_reviewed"
-  | "final_doc_check"
-  | "visa_applied"
-  | "final_instructions"
+  | "oshc_issued"
+  | "visa_fee_paid"
+  // Visa
+  | "visa_lodged"
+  | "medical_requested"
+  | "visa_granted"
+  // Closed
   | "closed_won"
   | "closed_lost";
 
@@ -31,9 +46,35 @@ export type PhaseGroup =
   | "qualifying"
   | "proposal"
   | "enrollment"
+  | "documents"
   | "payments"
   | "visa"
   | "closed";
+
+export type NextAction =
+  | "call_student"
+  | "whatsapp_student"
+  | "email_student"
+  | "schedule_meeting"
+  | "apply_to_school"
+  | "review_documents"
+  | "notify_visa_team"
+  | "send_visa_checklist"
+  | "request_coe_deposit"
+  | "collect_oshc_payment"
+  | "collect_visa_fee"
+  | "lodge_visa"
+  | "notify_student"
+  | null;
+
+export type WaitingFor =
+  | "student"
+  | "school"
+  | "visa_team"
+  | "payment"
+  | "insurance_provider"
+  | "home_affairs"
+  | null;
 
 export type CourseType =
   | "ELICOS"
@@ -102,6 +143,12 @@ export interface Document {
   uploadedBy: string;
 }
 
+export interface StageChecklistItem {
+  id: string;
+  label: string;
+  done: boolean;
+}
+
 export interface Lead {
   id: string;
   // Personal
@@ -120,6 +167,10 @@ export interface Lead {
   stage: PipelineStage;
   assignedConsultant: string;
   notes: string;
+  // Next action / waiting
+  nextAction?: NextAction;
+  waitingFor?: WaitingFor;
+  stageChecklist?: StageChecklistItem[];
   // Relations
   tasks: Task[];
   contactHistory: ContactEvent[];

@@ -114,7 +114,7 @@ export default function BriefingPage() {
 
   // 7. Leads in visa stage — action needed
   const visaLeads = leads.filter((l) =>
-    ["visa_checklist_call", "statement_reviewed", "final_doc_check", "visa_applied", "final_instructions"].includes(l.stage)
+    ["visa_lodged", "medical_requested", "visa_granted"].includes(l.stage)
   );
 
   const totalActions = hotNoContact.length + overdueTaskLeads.length + paymentsDueThisWeek.length + stuckLeads.length + overdueReminders.length;

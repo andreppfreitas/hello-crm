@@ -3,8 +3,8 @@ import { dbGetLead, dbSaveLead, dbDeleteLead } from "@/lib/db/leads-db";
 import { dbLogActivity } from "@/lib/db/activity-db";
 import { SESSION_COOKIE } from "@/lib/auth-config";
 import { dbGetUser } from "@/lib/db/users-db";
-import { STAGE_CONFIG } from "@/lib/constants";
-import type { Lead, PipelineStage, StageChangeEvent } from "@/types";
+import { STAGE_CONFIG, STAGE_BEHAVIOR_CONFIG } from "@/lib/constants";
+import type { Lead, PipelineStage, StageChangeEvent, StageChecklistItem } from "@/types";
 
 async function getSessionUser(request: NextRequest) {
   const session = request.cookies.get(SESSION_COOKIE)?.value;
@@ -48,6 +48,24 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       );
       updated.stageHistory = [...updated.stageHistory, { stage: data.stage as PipelineStage, enteredAt: now }];
 
+      // Auto-populate nextAction, waitingFor, stageChecklist from config
+      const behavior = STAGE_BEHAVIOR_CONFIG[data.stage];
+      if (behavior) {
+        // Only auto-set if not explicitly provided in the request
+        if (!("nextAction" in data)) updated.nextAction = behavior.defaultNextAction;
+        if (!("waitingFor" in data)) updated.waitingFor = behavior.defaultWaitingFor;
+        // Always reset stage checklist when entering a new stage
+        if (behavior.checklist.length > 0) {
+          updated.stageChecklist = behavior.checklist.map((label, i): StageChecklistItem => ({
+            id: `chk-${data.stage}-${i}`,
+            label,
+            done: false,
+          }));
+        } else {
+          updated.stageChecklist = [];
+        }
+      }
+
       // Log stage change
       if (me) {
         await dbLogActivity({
@@ -57,7 +75,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
           action: "stage_changed",
           leadId: existing.id,
           leadName: existing.fullName,
-          details: `${STAGE_CONFIG[existing.stage].label} → ${STAGE_CONFIG[data.stage].label}`,
+          details: `${STAGE_CONFIG[existing.stage]?.label ?? existing.stage} → ${STAGE_CONFIG[data.stage]?.label ?? data.stage}`,
           timestamp: now,
         });
       }

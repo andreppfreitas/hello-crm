@@ -281,11 +281,11 @@ export function getMockDashboardStats() {
   return {
     total: leads.length,
     hot: leads.filter((l) => l.temperature === "hot").length,
-    waitingReply: leads.filter((l) => l.stage === "waiting_response").length,
+    waitingReply: leads.filter((l) => l.stage === "initial_docs_requested").length,
     meetingsScheduled: leads.filter((l) => l.stage === "meeting_scheduled").length,
     applicationsInProgress: leads.filter((l) => STAGE_CONFIG[l.stage].order >= 8 && STAGE_CONFIG[l.stage].order <= 12).length,
     paymentsPending: leads.filter((l) => l.payments.some((p) => p.status === "pending")).length,
-    visaPending: leads.filter((l) => ["visa_checklist_call", "statement_reviewed", "final_doc_check", "visa_applied", "final_instructions"].includes(l.stage)).length,
+    visaPending: leads.filter((l) => ["visa_lodged", "medical_requested", "visa_granted"].includes(l.stage)).length,
     closedWon: leads.filter((l) => l.stage === "closed_won").length,
     closedLost: leads.filter((l) => l.stage === "closed_lost").length,
   };

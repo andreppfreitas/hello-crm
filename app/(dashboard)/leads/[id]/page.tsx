@@ -6,8 +6,8 @@ import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
 import { StageBadge } from "@/components/shared/StageBadge";
 import { formatDate, formatCurrency, initials, isOverdue } from "@/lib/utils";
 import { computeScore, scoreColor, scoreBarColor } from "@/lib/scoring";
-import type { VisaChecklistItem } from "@/types";
-import { STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG, CONSULTANTS, CITIES, COURSES, TASK_TEMPLATES } from "@/lib/constants";
+import type { VisaChecklistItem, NextAction, WaitingFor } from "@/types";
+import { STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG, CONSULTANTS, CITIES, COURSES, TASK_TEMPLATES, STAGE_BEHAVIOR_CONFIG, NEXT_ACTION_CONFIG, NEXT_ACTION_OPTIONS, WAITING_FOR_CONFIG, WAITING_FOR_OPTIONS } from "@/lib/constants";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -54,9 +54,18 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
       completed: false,
       stage,
     }));
+    const behavior = STAGE_BEHAVIOR_CONFIG[stage];
+    const stageChecklist = behavior.checklist.map((label, i) => ({
+      id: `chk-${stage}-${i}`,
+      label,
+      done: false,
+    }));
     updateLead(lead.id, {
       stage,
       tasks: [...lead.tasks.filter((t) => t.stage !== stage), ...newTasks],
+      nextAction: behavior.defaultNextAction,
+      waitingFor: behavior.defaultWaitingFor,
+      stageChecklist,
     });
     setEditStage(false);
     toast.success(`Stage updated to ${STAGE_CONFIG[stage].label}`);
@@ -388,13 +397,104 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                     <p className="text-sm text-foreground bg-secondary/30 rounded-lg p-3">{lead.notes}</p>
                   </div>
                 )}
+
+                {/* Next Action + Waiting For */}
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+                  {/* Next Action */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Next Action</p>
+                    <select
+                      value={lead.nextAction ?? ""}
+                      onChange={(e) => updateLead(lead.id, { nextAction: (e.target.value || null) as NextAction })}
+                      className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary/50"
+                    >
+                      <option value="">— None —</option>
+                      {NEXT_ACTION_OPTIONS.map((a) => (
+                        <option key={a} value={a}>
+                          {NEXT_ACTION_CONFIG[a].icon} {NEXT_ACTION_CONFIG[a].label}
+                        </option>
+                      ))}
+                    </select>
+                    {lead.nextAction && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                        <span className="text-base">{NEXT_ACTION_CONFIG[lead.nextAction].icon}</span>
+                        <span className="text-sm font-medium text-primary">{NEXT_ACTION_CONFIG[lead.nextAction].label}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Waiting For */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Waiting For</p>
+                    <select
+                      value={lead.waitingFor ?? ""}
+                      onChange={(e) => updateLead(lead.id, { waitingFor: (e.target.value || null) as WaitingFor })}
+                      className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary/50"
+                    >
+                      <option value="">— None —</option>
+                      {WAITING_FOR_OPTIONS.map((w) => (
+                        <option key={w} value={w}>
+                          {WAITING_FOR_CONFIG[w].icon} {WAITING_FOR_CONFIG[w].label}
+                        </option>
+                      ))}
+                    </select>
+                    {lead.waitingFor && (
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        <span className="text-base">{WAITING_FOR_CONFIG[lead.waitingFor].icon}</span>
+                        <span className="text-sm font-medium text-amber-300">{WAITING_FOR_CONFIG[lead.waitingFor].label}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stage Checklist */}
+                {lead.stageChecklist && lead.stageChecklist.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-border">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Stage Checklist — {STAGE_CONFIG[lead.stage].label}
+                    </p>
+                    <div className="space-y-1.5">
+                      {lead.stageChecklist.map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            updateLead(lead.id, {
+                              stageChecklist: lead.stageChecklist!.map((c) =>
+                                c.id === item.id ? { ...c, done: !c.done } : c
+                              ),
+                            });
+                          }}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-lg border text-left transition-colors",
+                            item.done
+                              ? "border-emerald-500/20 bg-emerald-500/5"
+                              : "border-border hover:bg-white/3"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors",
+                            item.done ? "bg-emerald-500 border-emerald-500" : "border-border"
+                          )}>
+                            {item.done && <Check className="w-2.5 h-2.5 text-white" />}
+                          </div>
+                          <span className={cn("text-sm", item.done && "line-through text-muted-foreground")}>
+                            {item.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground text-right">
+                      {lead.stageChecklist.filter((c) => c.done).length}/{lead.stageChecklist.length} concluídos
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === "Tasks" && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Tasks for {STAGE_CONFIG[lead.stage].label}</h3>
+                  <h3 className="text-sm font-semibold">Tasks for {STAGE_CONFIG[lead.stage]?.label ?? lead.stage}</h3>
                   <span className="text-xs text-muted-foreground">{completedCount}/{stageTasks.length} done</span>
                 </div>
                 {stageTasks.length === 0 && <p className="text-sm text-muted-foreground">No tasks for this stage.</p>}

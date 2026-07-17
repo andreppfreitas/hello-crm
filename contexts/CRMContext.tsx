@@ -21,14 +21,14 @@ function computeStats(leads: Lead[]): DashboardStats {
   return {
     total: active.length,
     hot: active.filter((l) => l.temperature === "hot").length,
-    waitingReply: active.filter((l) => l.stage === "waiting_response").length,
+    waitingReply: active.filter((l) => l.stage === "initial_docs_requested").length,
     meetingsScheduled: active.filter((l) => l.stage === "meeting_scheduled").length,
     applicationsInProgress: active.filter(
       (l) => STAGE_CONFIG[l.stage].order >= 8 && STAGE_CONFIG[l.stage].order <= 12
     ).length,
     paymentsPending: active.filter((l) => l.payments.some((p) => p.status === "pending")).length,
     visaPending: active.filter((l) =>
-      ["visa_checklist_call", "statement_reviewed", "final_doc_check", "visa_applied", "final_instructions"].includes(l.stage)
+      ["visa_lodged", "medical_requested", "visa_granted"].includes(l.stage)
     ).length,
     closedWon: active.filter((l) => l.stage === "closed_won").length,
     closedLost: active.filter((l) => l.stage === "closed_lost").length,
