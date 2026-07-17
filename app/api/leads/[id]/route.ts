@@ -3,7 +3,7 @@ import { dbGetLead, dbSaveLead, dbDeleteLead } from "@/lib/db/leads-db";
 import { dbLogActivity } from "@/lib/db/activity-db";
 import { SESSION_COOKIE } from "@/lib/auth-config";
 import { dbGetUser } from "@/lib/db/users-db";
-import { STAGE_CONFIG, STAGE_BEHAVIOR_CONFIG } from "@/lib/constants";
+import { STAGE_CONFIG, STAGE_BEHAVIOR_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG } from "@/lib/constants";
 import type { Lead, PipelineStage, StageChangeEvent, StageChecklistItem } from "@/types";
 
 async function getSessionUser(request: NextRequest) {
@@ -91,6 +91,38 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         leadId: existing.id,
         leadName: existing.fullName,
         details: `${existing.temperature} → ${data.temperature}`,
+        timestamp: now,
+      });
+    }
+
+    // Log nextAction change (manual override, not auto-set)
+    if ("nextAction" in data && data.nextAction !== existing.nextAction && me && data.stage === undefined) {
+      const from = existing.nextAction ? NEXT_ACTION_CONFIG[existing.nextAction]?.label : "—";
+      const to = data.nextAction ? NEXT_ACTION_CONFIG[data.nextAction as NonNullable<typeof data.nextAction>]?.label : "—";
+      await dbLogActivity({
+        id: `act_${Date.now() + 3}`,
+        userId: me.id,
+        userName: me.displayName,
+        action: "lead_updated",
+        leadId: existing.id,
+        leadName: existing.fullName,
+        details: `Next Action: ${from} → ${to}`,
+        timestamp: now,
+      });
+    }
+
+    // Log waitingFor change (manual override)
+    if ("waitingFor" in data && data.waitingFor !== existing.waitingFor && me && data.stage === undefined) {
+      const from = existing.waitingFor ? WAITING_FOR_CONFIG[existing.waitingFor]?.label : "—";
+      const to = data.waitingFor ? WAITING_FOR_CONFIG[data.waitingFor as NonNullable<typeof data.waitingFor>]?.label : "—";
+      await dbLogActivity({
+        id: `act_${Date.now() + 4}`,
+        userId: me.id,
+        userName: me.displayName,
+        action: "lead_updated",
+        leadId: existing.id,
+        leadName: existing.fullName,
+        details: `Waiting For: ${from} → ${to}`,
         timestamp: now,
       });
     }

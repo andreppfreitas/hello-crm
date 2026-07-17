@@ -2,7 +2,7 @@
 
 import { useCRM } from "@/contexts/CRMContext";
 import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
-import { PHASE_ORDER, PHASE_CONFIG, STAGE_CONFIG } from "@/lib/constants";
+import { PHASE_ORDER, PHASE_CONFIG, STAGE_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG, ALL_STAGES } from "@/lib/constants";
 import { initials, formatDate } from "@/lib/utils";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -22,7 +22,7 @@ import {
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { MessageSquare, CheckSquare, Clock, Phone } from "lucide-react";
+import { MessageSquare, CheckSquare, Clock, Phone, ChevronRight } from "lucide-react";
 
 // ── Droppable stage row ─────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ function openWhatsApp(lead: Lead, e: React.MouseEvent) {
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
 }
 
-function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isDragging?: boolean; groupPartnerName?: string }) {
+function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance }: { lead: Lead; isDragging?: boolean; groupPartnerName?: string; onAdvance?: (e: React.MouseEvent) => void }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: lead.id });
 
   const style = transform
@@ -87,6 +87,9 @@ function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isD
 
   const stageTasks = lead.tasks.filter((t) => t.stage === lead.stage);
   const completed = stageTasks.filter((t) => t.completed).length;
+
+  const nextActionCfg = lead.nextAction ? NEXT_ACTION_CONFIG[lead.nextAction] : null;
+  const waitingForCfg = lead.waitingFor ? WAITING_FOR_CONFIG[lead.waitingFor] : null;
 
   return (
     <div
@@ -108,7 +111,7 @@ function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isD
             <Link href={`/leads/${lead.id}`} onClick={(e) => e.stopPropagation()}>
               <span
                 title={lead.fullName}
-                className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors block max-w-[160px]"
+                className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors block max-w-[140px]"
               >
                 {lead.fullName}
               </span>
@@ -134,11 +137,36 @@ function DraggableCard({ lead, isDragging, groupPartnerName }: { lead: Lead; isD
 
       <p className="text-xs text-muted-foreground truncate">{lead.courseInterest}</p>
 
+      {/* Next Action + Waiting For badges */}
+      {(nextActionCfg || waitingForCfg) && (
+        <div className="flex flex-wrap gap-1">
+          {nextActionCfg && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[10px] font-medium text-primary">
+              {nextActionCfg.icon} {nextActionCfg.label}
+            </span>
+          )}
+          {waitingForCfg && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[10px] font-medium text-amber-300">
+              {waitingForCfg.icon} {waitingForCfg.label}
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center gap-1.5">
         <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", STAGE_CONFIG[lead.stage].dot)} />
-        <span className={cn("text-[10px] font-medium truncate", STAGE_CONFIG[lead.stage].color)}>
+        <span className={cn("text-[10px] font-medium truncate flex-1", STAGE_CONFIG[lead.stage].color)}>
           {STAGE_CONFIG[lead.stage].label}
         </span>
+        {onAdvance && (
+          <button
+            onClick={onAdvance}
+            title="Avançar para próximo estágio"
+            className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-muted-foreground hover:text-foreground"
+          >
+            <ChevronRight className="w-3 h-3" /> Avançar
+          </button>
+        )}
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -288,12 +316,24 @@ function PipelineInner() {
                       ? leads.filter((l) => l.groupId === lead.groupId && l.id !== lead.id)
                       : [];
                     const partnerName = groupPartners.map((p) => p.fullName.split(" ")[0]).join(", ");
+                    const sortedStages = ALL_STAGES.slice().sort((a, b) => STAGE_CONFIG[a].order - STAGE_CONFIG[b].order);
+                    const currentIdx = sortedStages.indexOf(lead.stage);
+                    const nextStage = sortedStages.find((s, i) => i > currentIdx && s !== "closed_won" && s !== "closed_lost") ?? null;
                     return (
                       <DraggableCard
                         key={lead.id}
                         lead={lead}
                         isDragging={lead.id === activeId}
                         groupPartnerName={partnerName || undefined}
+                        onAdvance={nextStage ? (e) => {
+                          e.stopPropagation();
+                          if (lead.groupId) {
+                            leads.filter((l) => l.groupId === lead.groupId).forEach((l) => updateLead(l.id, { stage: nextStage }));
+                          } else {
+                            updateLead(lead.id, { stage: nextStage });
+                          }
+                          toast.success(`→ ${STAGE_CONFIG[nextStage].label}`);
+                        } : undefined}
                       />
                     );
                   });

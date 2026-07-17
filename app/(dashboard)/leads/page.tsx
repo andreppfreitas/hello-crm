@@ -6,7 +6,7 @@ import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
 import { StageBadge } from "@/components/shared/StageBadge";
 import { formatDate, initials } from "@/lib/utils";
 import { computeScore, scoreColor, scoreBarColor } from "@/lib/scoring";
-import { CONSULTANTS, CITIES, STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG } from "@/lib/constants";
+import { CONSULTANTS, CITIES, STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG, NEXT_ACTION_CONFIG, NEXT_ACTION_OPTIONS } from "@/lib/constants";
 import { useState, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
-import type { Lead, LeadTemperature, PipelineStage } from "@/types";
+import type { Lead, LeadTemperature, PipelineStage, NextAction } from "@/types";
 import { cn } from "@/lib/utils";
 
 export default function LeadsPage() {
@@ -243,12 +243,13 @@ function LeadsInner() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
-  const [showFilters, setShowFilters] = useState(!!searchParams.get("consultant"));
+  const [showFilters, setShowFilters] = useState(!!(searchParams.get("consultant") || searchParams.get("nextAction")));
   const [filterTemp, setFilterTemp] = useState<LeadTemperature | "">("");
   const [filterStage, setFilterStage] = useState<PipelineStage | "">("");
   const [filterConsultant, setFilterConsultant] = useState(searchParams.get("consultant") ?? "");
   const [filterCity, setFilterCity] = useState("");
   const [filterCourse, setFilterCourse] = useState("");
+  const [filterNextAction, setFilterNextAction] = useState<NextAction | "">((searchParams.get("nextAction") ?? "") as NextAction | "");
   const [sortField, setSortField] = useState<"createdAt" | "fullName" | "temperature" | "score" | "visaExpiryDate">("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -274,6 +275,7 @@ function LeadsInner() {
     if (filterConsultant) list = list.filter((l) => l.assignedConsultant === filterConsultant);
     if (filterCity) list = list.filter((l) => l.preferredCity === filterCity);
     if (filterCourse) list = list.filter((l) => l.courseInterest.includes(filterCourse));
+    if (filterNextAction) list = list.filter((l) => l.nextAction === filterNextAction);
     list.sort((a, b) => {
       if (sortField === "score") return sortDir === "asc" ? (a.score ?? 0) - (b.score ?? 0) : (b.score ?? 0) - (a.score ?? 0);
       if (sortField === "visaExpiryDate") {
@@ -292,7 +294,7 @@ function LeadsInner() {
     return list;
   }, [scored, search, filterTemp, filterStage, filterConsultant, filterCity, filterCourse, sortField, sortDir]);
 
-  const activeFilters = [filterTemp, filterStage, filterConsultant, filterCity, filterCourse].filter(Boolean).length;
+  const activeFilters = [filterTemp, filterStage, filterConsultant, filterCity, filterCourse, filterNextAction].filter(Boolean).length;
   const allSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
 
   function toggleAll() {
@@ -395,13 +397,19 @@ function LeadsInner() {
                 <option value="">{t("city")}</option>
                 {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+              <select value={filterCourse} onChange={(e) => setFilterCourse(e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+                <option value="">{t("course")}</option>
+                {["ELICOS", "VET", "Bachelor", "Master", "Foundation", "Professional Year"].map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
               <div className="flex gap-2">
-                <select value={filterCourse} onChange={(e) => setFilterCourse(e.target.value)} className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-                  <option value="">{t("course")}</option>
-                  {["ELICOS", "VET", "Bachelor", "Master", "Foundation", "Professional Year"].map((c) => <option key={c} value={c}>{c}</option>)}
+                <select value={filterNextAction ?? ""} onChange={(e) => setFilterNextAction((e.target.value || "") as NextAction | "")} className="flex-1 bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+                  <option value="">Next Action</option>
+                  {NEXT_ACTION_OPTIONS.map((a) => (
+                    <option key={a} value={a}>{NEXT_ACTION_CONFIG[a].icon} {NEXT_ACTION_CONFIG[a].label}</option>
+                  ))}
                 </select>
                 {activeFilters > 0 && (
-                  <Button variant="ghost" size="icon" onClick={() => { setFilterTemp(""); setFilterStage(""); setFilterConsultant(""); setFilterCity(""); setFilterCourse(""); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setFilterTemp(""); setFilterStage(""); setFilterConsultant(""); setFilterCity(""); setFilterCourse(""); setFilterNextAction(""); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 )}
@@ -493,6 +501,7 @@ function LeadsInner() {
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("phone")}</th>
                 <SortTh field="temperature" label="Temp" />
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("stage")}</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Next Action</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("course")}</th>
                 <SortTh field="createdAt" label={t("created")} />
                 <th className="px-3 py-3 w-16" />
@@ -500,7 +509,7 @@ function LeadsInner() {
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 && (
-                <tr><td colSpan={9} className="px-4 py-12 text-center text-muted-foreground text-sm">{t("noLeadsFound")}</td></tr>
+                <tr><td colSpan={10} className="px-4 py-12 text-center text-muted-foreground text-sm">{t("noLeadsFound")}</td></tr>
               )}
               {filtered.map((lead) => {
                 const groupMembers = lead.groupId
@@ -561,6 +570,15 @@ function LeadsInner() {
                   </td>
                   <td className="px-3 py-3">
                     <EditableStage lead={lead} onSave={(v) => { updateLead(lead.id, { stage: v }); toast.success(`${t("stage")}: ${STAGE_CONFIG[v].label}`); }} />
+                  </td>
+                  <td className="px-3 py-3">
+                    {lead.nextAction ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-[11px] font-medium text-primary whitespace-nowrap">
+                        {NEXT_ACTION_CONFIG[lead.nextAction].icon} {NEXT_ACTION_CONFIG[lead.nextAction].label}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/40">—</span>
+                    )}
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground max-w-[120px] truncate">{lead.courseInterest}</td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">{formatDate(lead.createdAt)}</td>

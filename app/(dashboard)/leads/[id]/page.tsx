@@ -48,6 +48,14 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
 
   function handleStageChange(stage: PipelineStage) {
     if (!lead) return;
+    // Block if current stage has an incomplete checklist
+    if (lead.stageChecklist && lead.stageChecklist.length > 0) {
+      const incomplete = lead.stageChecklist.filter((c) => !c.done);
+      if (incomplete.length > 0) {
+        toast.error(`Complete o checklist antes de avançar (${incomplete.length} item${incomplete.length > 1 ? "s" : ""} pendente${incomplete.length > 1 ? "s" : ""})`);
+        return;
+      }
+    }
     const newTasks = TASK_TEMPLATES[stage].map((title, i) => ({
       id: `${lead.id}-${stage}-task-${i}`,
       title,

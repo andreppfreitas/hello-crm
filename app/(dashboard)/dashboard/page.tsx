@@ -6,7 +6,7 @@ import { StatCard } from "@/components/shared/StatCard";
 import { StageBadge } from "@/components/shared/StageBadge";
 import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
 import { formatDate } from "@/lib/utils";
-import { CITIES, COURSES, CONSULTANTS, STAGE_CONFIG } from "@/lib/constants";
+import { CITIES, COURSES, CONSULTANTS, STAGE_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG } from "@/lib/constants";
 import {
   Users, Flame, MessageSquare, Calendar, FileText,
   CreditCard, Globe, Trophy, XCircle,
@@ -57,6 +57,29 @@ export default function DashboardPage() {
   // Use the MOST RECENT of: lastContactAt, updatedAt, last stageChange, createdAt.
   // Also exclude leads already in advanced phases (enrollment → closed) — they've clearly been worked on.
   const ACTIVE_PHASES = ["leads", "qualifying", "proposal"];
+  // "O que fazer hoje" — group active non-closed leads by nextAction
+  const todoLeads = activeLeadsList.filter((l) => l.nextAction);
+  const todoGroups = Object.entries(
+    todoLeads.reduce<Record<string, typeof todoLeads>>((acc, l) => {
+      const key = l.nextAction!;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(l);
+      return acc;
+    }, {})
+  ).sort((a, b) => b[1].length - a[1].length);
+
+  // Stuck leads — waitingFor set and no activity for 3+ days
+  const stuckLeads = activeLeadsList.filter((l) => {
+    if (!l.waitingFor) return false;
+    const candidates = [
+      l.updatedAt ? new Date(l.updatedAt).getTime() : 0,
+      l.lastContactAt ? new Date(l.lastContactAt).getTime() : 0,
+      ...(l.stageChanges ?? []).map((sc) => new Date(sc.changedAt).getTime()),
+    ].filter((t) => t > 0);
+    const last = Math.max(...candidates);
+    return (now - last) / 86400000 > 3;
+  });
+
   const forgottenLeads = activeLeadsList.filter((l) => {
     // Leads in enrollment/payments/visa/closed phases are actively being processed — not forgotten
     const phase = STAGE_CONFIG[l.stage]?.phase;
@@ -113,6 +136,50 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* O que fazer hoje */}
+      {todoGroups.length > 0 && (
+        <div className="glass-card rounded-xl p-5 space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">⚡ O que fazer hoje</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2">
+            {todoGroups.map(([action, group]) => {
+              const cfg = NEXT_ACTION_CONFIG[action as keyof typeof NEXT_ACTION_CONFIG];
+              if (!cfg) return null;
+              return (
+                <Link key={action} href={`/leads?nextAction=${action}`}>
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-border hover:border-primary/30 hover:bg-primary/5 transition-colors cursor-pointer">
+                    <span className="text-xl">{cfg.icon}</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">{cfg.label}</p>
+                      <p className="text-lg font-bold text-primary">{group.length}</p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Leads travados (waitingFor > 3 dias sem atividade) */}
+      {stuckLeads.length > 0 && (
+        <div className="glass-card rounded-xl p-4 border border-orange-500/30 bg-orange-500/5">
+          <p className="text-sm font-semibold text-orange-400 mb-2">⏳ {stuckLeads.length} lead(s) travado(s) há 3+ dias</p>
+          <div className="flex flex-wrap gap-2">
+            {stuckLeads.slice(0, 8).map((l) => {
+              const wfCfg = l.waitingFor ? WAITING_FOR_CONFIG[l.waitingFor] : null;
+              return (
+                <Link key={l.id} href={`/leads/${l.id}`}>
+                  <span className="text-xs px-2.5 py-1 rounded-full bg-orange-500/15 text-orange-300 border border-orange-500/30 hover:bg-orange-500/25 transition-colors">
+                    {l.fullName.split(" ")[0]} {wfCfg ? `· ${wfCfg.icon} ${wfCfg.label}` : ""}
+                  </span>
+                </Link>
+              );
+            })}
+            {stuckLeads.length > 8 && <span className="text-xs px-2.5 py-1 text-muted-foreground">+{stuckLeads.length - 8}</span>}
+          </div>
         </div>
       )}
 
