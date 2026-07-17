@@ -171,6 +171,8 @@ export interface Lead {
   nextAction?: NextAction;
   waitingFor?: WaitingFor;
   stageChecklist?: StageChecklistItem[];
+  // Multi-stage: additional stages completed within the same phase
+  completedStages?: PipelineStage[];
   // Relations
   tasks: Task[];
   contactHistory: ContactEvent[];

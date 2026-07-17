@@ -90,6 +90,7 @@ function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance }: { lead
 
   const nextActionCfg = lead.nextAction ? NEXT_ACTION_CONFIG[lead.nextAction] : null;
   const waitingForCfg = lead.waitingFor ? WAITING_FOR_CONFIG[lead.waitingFor] : null;
+  const isInVisaProcess = STAGE_CONFIG[lead.stage]?.phase === "visa";
 
   return (
     <div
@@ -99,7 +100,8 @@ function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance }: { lead
       {...attributes}
       className={cn(
         "glass-card rounded-lg p-3 cursor-grab active:cursor-grabbing space-y-2.5 select-none group",
-        isDragging && "opacity-30"
+        isDragging && "opacity-30",
+        isInVisaProcess && "border border-emerald-500/30 bg-emerald-500/5"
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -135,7 +137,14 @@ function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance }: { lead
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground truncate">{lead.courseInterest}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="text-xs text-muted-foreground truncate flex-1">{lead.courseInterest}</p>
+        {isInVisaProcess && (
+          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 flex-shrink-0">
+            🛂 Em Visto
+          </span>
+        )}
+      </div>
 
       {/* Next Action + Waiting For badges */}
       {(nextActionCfg || waitingForCfg) && (

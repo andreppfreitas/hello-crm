@@ -201,8 +201,15 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
           </div>
 
           {/* Visa / offshore */}
-          <div className="glass-card rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Visto & Status</h3>
+          <div className={cn("glass-card rounded-xl p-4 space-y-3", STAGE_CONFIG[lead.stage]?.phase === "visa" && "border border-emerald-500/30 bg-emerald-500/5")}>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Visto & Status</h3>
+              {STAGE_CONFIG[lead.stage]?.phase === "visa" && (
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  🛂 Em Processo de Visto
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <span className={cn(
                 "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold",
@@ -228,8 +235,9 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                 className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
               />
             </div>
+            {STAGE_CONFIG[lead.stage]?.phase !== "visa" && (
             <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">Vencimento do visto</label>
+              <label className="text-xs text-muted-foreground">Vencimento do visto atual</label>
               <input
                 type="date"
                 defaultValue={lead.visaExpiryDate ?? ""}
@@ -245,6 +253,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                 );
               })()}
             </div>
+            )}
           </div>
 
           {/* Course & budget */}
@@ -324,6 +333,51 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                 <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${progress}%` }} />
               </div>
             </div>
+            {/* Completed stages within current phase */}
+            {(() => {
+              const currentPhase = STAGE_CONFIG[lead.stage]?.phase;
+              const phaseStages = currentPhase ? PHASE_CONFIG[currentPhase]?.stages ?? [] : [];
+              if (phaseStages.length <= 1) return null;
+              const completed = new Set([lead.stage, ...(lead.completedStages ?? [])]);
+              return (
+                <div className="space-y-1 pt-1 border-t border-border">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider pt-1">Concluídos nesta fase</p>
+                  {phaseStages.map((s) => {
+                    const isDone = completed.has(s);
+                    const isCurrent = s === lead.stage;
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => {
+                          if (isCurrent) return; // can't uncheck current
+                          const prev = lead.completedStages ?? [];
+                          const next = isDone
+                            ? prev.filter((x) => x !== s)
+                            : [...prev, s];
+                          updateLead(lead.id, { completedStages: next });
+                        }}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs transition-colors text-left",
+                          isCurrent ? "bg-primary/15 text-primary cursor-default" :
+                          isDone ? "bg-emerald-500/10 text-emerald-300" :
+                          "text-muted-foreground hover:bg-white/5 hover:text-foreground"
+                        )}
+                      >
+                        <div className={cn(
+                          "w-3.5 h-3.5 rounded border flex items-center justify-center flex-shrink-0",
+                          isCurrent ? "bg-primary border-primary" :
+                          isDone ? "bg-emerald-500 border-emerald-500" : "border-border"
+                        )}>
+                          {(isDone || isCurrent) && <Check className="w-2.5 h-2.5 text-white" />}
+                        </div>
+                        {STAGE_CONFIG[s].label}
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
             <AnimatePresence>
               {editStage && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">

@@ -44,8 +44,12 @@ export default function DashboardPage() {
   const now = Date.now();
   const activeLeadsList = leads.filter((l) => l.stage !== "closed_won" && l.stage !== "closed_lost" && (!l.groupId || l.groupRole === "primary"));
 
+  // Leads in visa phase = "em processo" — exclude from sales alerts, track separately
+  const VISA_PHASE_STAGES = ["visa_lodged", "medical_requested", "visa_granted"];
+  const inVisaProcess = activeLeadsList.filter((l) => STAGE_CONFIG[l.stage]?.phase === "visa");
+
   const visaAlerts = activeLeadsList
-    .filter((l) => l.visaExpiryDate)
+    .filter((l) => l.visaExpiryDate && !VISA_PHASE_STAGES.includes(l.stage))
     .map((l) => ({
       ...l,
       daysLeft: Math.ceil((new Date(l.visaExpiryDate!).getTime() - now) / 86400000),
@@ -68,9 +72,10 @@ export default function DashboardPage() {
     }, {})
   ).sort((a, b) => b[1].length - a[1].length);
 
-  // Stuck leads — waitingFor set and no activity for 3+ days
+  // Stuck leads — waitingFor set, no activity for 3+ days, NOT in visa process
   const stuckLeads = activeLeadsList.filter((l) => {
     if (!l.waitingFor) return false;
+    if (STAGE_CONFIG[l.stage]?.phase === "visa") return false; // visa = expected waiting
     const candidates = [
       l.updatedAt ? new Date(l.updatedAt).getTime() : 0,
       l.lastContactAt ? new Date(l.lastContactAt).getTime() : 0,
@@ -113,6 +118,20 @@ export default function DashboardPage() {
                   <Link key={l.id} href={`/leads/${l.id}`}>
                     <span className="text-xs px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25 transition-colors">
                       {l.fullName.split(" ")[0]} ({l.daysLeft < 0 ? `${t("expired")} ${Math.abs(l.daysLeft)}d` : `${l.daysLeft}d`})
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+          {inVisaProcess.length > 0 && (
+            <div className="glass-card rounded-xl p-4 border border-emerald-500/30 bg-emerald-500/5">
+              <p className="text-sm font-semibold text-emerald-400 mb-2">🛂 {inVisaProcess.length} estudante(s) em processo de visto</p>
+              <div className="flex flex-wrap gap-2">
+                {inVisaProcess.map((l) => (
+                  <Link key={l.id} href={`/leads/${l.id}`}>
+                    <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors">
+                      {l.fullName.split(" ")[0]} · {STAGE_CONFIG[l.stage]?.label}
                     </span>
                   </Link>
                 ))}

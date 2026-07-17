@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="EL NINO Studio — Growth & Digital Positioning Studio. We transform ambitious businesses into category-defining brands through strategy, presence, and growth systems.">
+  <meta name="keywords" content="brand strategy, digital positioning, growth studio, premium branding, brand transformation, brand architecture, authority building">
+  <meta name="author" content="EL NINO Studio">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#080808">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://elninostudio.com">
+  <meta property="og:title" content="EL NINO Studio — From Business to Brand">
+  <meta property="og:description" content="Growth & Digital Positioning Studio. We transform ambitious businesses into category-defining brands through strategy, presence, and growth systems.">
+  <meta property="og:image" content="https://elninostudio.com/og-image.jpg">
+  <meta property="og:site_name" content="EL NINO Studio">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="EL NINO Studio — From Business to Brand">
+  <meta name="twitter:description" content="Growth & Digital Positioning Studio. Strategic brand transformation for ambitious companies.">
+  <meta name="twitter:image" content="https://elninostudio.com/og-image.jpg">
+
+  <title>EL NINO Studio — From Business to Brand</title>
+
+  <!-- SVG Favicon -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 50'%3E%3Cpath d='M8 12 C16 4,24 20,32 12 S48 4,56 12 S68 20,72 12' stroke='%238b5cf6' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Cpath d='M8 25 C16 17,24 33,32 25 S48 17,56 25 S68 33,72 25' stroke='%238b5cf6' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Cpath d='M8 38 C16 30,24 46,32 38 S48 30,56 38 S68 46,72 38' stroke='%238b5cf6' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+
+  <!-- Preload critical fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="is-loading">
+
+  <!-- ═══════════════════════════════════════ PRELOADER ═══ -->
+  <div id="preloader" aria-hidden="true">
+    <div class="preloader-content">
+      <svg class="preloader-logo" viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path class="wave-path" d="M8 12 C16 4,24 20,32 12 S48 4,56 12 S68 20,72 12" stroke="#8b5cf6" stroke-width="4.5" stroke-linecap="round"/>
+        <path class="wave-path" d="M8 25 C16 17,24 33,32 25 S48 17,56 25 S68 33,72 25" stroke="#8b5cf6" stroke-width="4.5" stroke-linecap="round"/>
+        <path class="wave-path" d="M8 38 C16 30,24 46,32 38 S48 30,56 38 S68 46,72 38" stroke="#8b5cf6" stroke-width="4.5" stroke-linecap="round"/>
+      </svg>
+      <div class="preloader-wordmark">EL NINO</div>
+      <div class="preloader-bar"><span class="preloader-fill"></span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ CURSOR ═══ -->
+  <div id="cursor-outer" aria-hidden="true"></div>
+  <div id="cursor-inner" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════ NOISE OVERLAY ═══ -->
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- ═══════════════════════════════════════ NAVIGATION ═══ -->
+  <nav id="navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-inner">
+      <a href="#hero" class="nav-logo" aria-label="EL NINO Studio — Home">
+        <svg viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M8 12 C16 4,24 20,32 12 S48 4,56 12 S68 20,72 12" stroke="#8b5cf6" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M8 25 C16 17,24 33,32 25 S48 17,56 25 S68 33,72 25" stroke="#8b5cf6" stroke-width="4.5" stroke-linecap="round"/>
+          <path d="M8 38 C16 30,24 46,32 38 S48 30,56 38 S68 46,72 38" stroke="#8b5cf6" stroke-width="4.5" stroke-linecap="round"/>
+        </svg>
+        <span class="nav-logo-text">EL NINO <em>Studio</em></span>
+      </a>
+
+      <ul class="nav-links" role="list">
+        <li><a href="#philosophy" class="nav-link">Philosophy</a></li>
+        <li><a href="#services" class="nav-link">Services</a></li>
+        <li><a href="#work" class="nav-link">Work</a></li>
+        <li><a href="#process" class="nav-link">Process</a></li>
+      </ul>
+
+      <a href="#contact" class="nav-cta magnetic">Start a Project</a>
+
+      <button class="nav-hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="mobile-menu">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- ═══════════════════════════════════════ MOBILE MENU ═══ -->
+  <div class="mobile-menu" id="mobile-menu" role="dialog" aria-label="Mobile navigation" aria-hidden="true">
+    <nav class="mobile-nav">
+      <a href="#philosophy" class="mobile-nav-link">Philosophy</a>
+      <a href="#services" class="mobile-nav-link">Services</a>
+      <a href="#work" class="mobile-nav-link">Work</a>
+      <a href="#process" class="mobile-nav-link">Process</a>
+      <a href="#contact" class="mobile-nav-link mobile-nav-cta">Start a Project</a>
+    </nav>
+    <div class="mobile-menu-footer">
+      <span>EL NINO Studio</span>
+      <span>From Business to Brand.</span>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════ HERO ═══ -->
+    <section id="hero" aria-label="Hero">
+      <div class="hero-bg" aria-hidden="true">
+        <div class="hero-glow hero-glow--1"></div>
+        <div class="hero-glow hero-glow--2"></div>
+        <div class="hero-glow hero-glow--3"></div>
+        <div class="hero-grid"></div>
+      </div>
+
+      <div class="hero-content">
+        <p class="hero-eyebrow" aria-label="Growth and Digital Positioning Studio">
+          <span class="eyebrow-dot" aria-hidden="true"></span>
+          Growth &amp; Digital Positioning Studio
+        </p>
+
+        <h1 class="hero-headline" aria-label="From Business to Brand">
+          <span class="hero-line" data-text="From Business">From Business</span>
+          <span class="hero-line hero-line--accent" data-text="to Brand."><em>to Brand.</em></span>
+        </h1>
+
+       <p class="hero-subtext">
+  We architect the positioning, presence, and growth systems
+  that transform ambitious companies into category-defining brands.
+</p>
+
+        <div class="hero-actions">
+          <a href="#contact" class="btn-primary magnetic" aria-label="Start your transformation with EL NINO Studio">
+            <span>Start Your Transformation</span>
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="#work" class="btn-ghost" aria-label="Explore our work">
+            <span>Explore Work</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-scroll-indicator" aria-hidden="true">
+        <div class="scroll-line-wrap">
+          <div class="scroll-line-inner"></div>
+        </div>
+        <span class="scroll-label">Scroll</span>
+      </div>
+
+      <div class="hero-stats" aria-label="Key metrics">
+        <div class="stat-item">
+          <div class="stat-value"><span class="counter" data-target="120">0</span><span class="stat-suffix">+</span></div>
+          <div class="stat-label">Brands Transformed</div>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-item">
+          <div class="stat-value"><span class="counter" data-target="8">0</span><span class="stat-suffix">×</span></div>
+          <div class="stat-label">Avg. Value Growth</div>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-item">
+          <div class="stat-value"><span class="counter" data-target="94">0</span><span class="stat-suffix">%</span></div>
+          <div class="stat-label">Client Retention</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ PHILOSOPHY ═══ -->
+    <section id="philosophy" aria-labelledby="philosophy-heading">
+      <div class="container">
+        <div class="philosophy-grid">
+          <div class="philosophy-left">
+            <div class="section-tag reveal">Our Philosophy</div>
+            <h2 id="philosophy-heading" class="section-headline reveal" style="--delay:0.1s">
+              Strategy is the<br><em>only shortcut.</em>
+            </h2>
+            <div class="philosophy-accent-line reveal" style="--delay:0.2s" aria-hidden="true"></div>
+          </div>
+
+          <div class="philosophy-right">
+            <p class="philosophy-lead reveal" style="--delay:0.05s">
+              Most companies invest in marketing. We invest in meaning.
+            </p>
+            <p class="philosophy-body reveal" style="--delay:0.15s">
+              Before tactics, before channels, before campaigns — there must be clarity. Clarity about who you are, what you uniquely offer, and why it matters to those who can become your most valuable clients.
+            </p>
+            <p class="philosophy-body reveal" style="--delay:0.25s">
+              EL NINO Studio exists at the intersection of strategic intelligence and visual excellence. We don't create noise. We create positioning so precise that the right people find you inevitable.
+            </p>
+
+            <div class="philosophy-pillars reveal" style="--delay:0.35s">
+              <div class="pillar">
+                <span class="pillar-num" aria-hidden="true">01</span>
+                <span class="pillar-name">Strategy</span>
+              </div>
+              <div class="pillar">
+                <span class="pillar-num" aria-hidden="true">02</span>
+                <span class="pillar-name">Presence</span>
+              </div>
+              <div class="pillar">
+                <span class="pillar-num" aria-hidden="true">03</span>
+                <span class="pillar-name">Growth</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ SERVICES ═══ -->
+    <section id="services" aria-labelledby="services-heading">
+      <div class="container">
+        <header class="section-header">
+          <div class="section-tag reveal">What We Do</div>
+          <h2 id="services-heading" class="section-headline reveal" style="--delay:0.1s">
+            Strategic Systems<br><em>for Category Leaders</em>
+          </h2>
+        </header>
+
+        <div class="services-grid" role="list">
+
+          <article class="service-item reveal" style="--delay:0s" role="listitem">
+            <div class="service-num" aria-hidden="true">01</div>
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><path d="M4 16C4 9.373 9.373 4 16 4s12 5.373 12 12-5.373 12-12 12S4 22.627 4 16z" stroke="currentColor" stroke-width="1.2"/><path d="M16 10v6l4 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="service-name">Brand Positioning</h3>
+            <p class="service-desc">The strategic foundation that determines how your market perceives, values, and chooses you. We build positions that command premium pricing and eliminate commodity competition.</p>
+            <div class="service-arrow" aria-hidden="true">→</div>
+          </article>
+
+          <article class="service-item reveal" style="--delay:0.08s" role="listitem">
+            <div class="service-num" aria-hidden="true">02</div>
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><path d="M6 26L12 16l6 4 8-14" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="26" cy="8" r="2" stroke="currentColor" stroke-width="1.2"/></svg>
+            </div>
+            <h3 class="service-name">Growth Architecture</h3>
+            <p class="service-desc">Sustainable growth systems engineered to compound. We design acquisition, conversion, and retention frameworks that work without constant intervention.</p>
+            <div class="service-arrow" aria-hidden="true">→</div>
+          </article>
+
+          <article class="service-item reveal" style="--delay:0.16s" role="listitem">
+            <div class="service-num" aria-hidden="true">03</div>
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><rect x="4" y="6" width="24" height="18" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M4 11h24" stroke="currentColor" stroke-width="1.2"/><path d="M9 17h14M9 21h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="service-name">Digital Presence</h3>
+            <p class="service-desc">Your brand's digital ecosystem — from website experience to social infrastructure. We build premium digital environments that convert perception into pipeline.</p>
+            <div class="service-arrow" aria-hidden="true">→</div>
+          </article>
+
+          <article class="service-item reveal" style="--delay:0.24s" role="listitem">
+            <div class="service-num" aria-hidden="true">04</div>
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><polygon points="16,4 20,12 28,13 22,19 24,27 16,23 8,27 10,19 4,13 12,12" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+            </div>
+            <h3 class="service-name">Authority Framework</h3>
+            <p class="service-desc">We build the intellectual infrastructure that makes you the only credible choice. Thought leadership systems, content positioning, and reputation architecture that compounds over time.</p>
+            <div class="service-arrow" aria-hidden="true">→</div>
+          </article>
+
+          <article class="service-item reveal" style="--delay:0.04s" role="listitem">
+            <div class="service-num" aria-hidden="true">05</div>
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><path d="M6 8h20M6 14h14M6 20h16M6 26h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="service-name">Content Systems</h3>
+            <p class="service-desc">Strategic narrative engines that maintain market presence without creative burnout. We build scalable content architectures aligned to your positioning and growth objectives.</p>
+            <div class="service-arrow" aria-hidden="true">→</div>
+          </article>
+
+          <article class="service-item reveal" style="--delay:0.12s" role="listitem">
+            <div class="service-num" aria-hidden="true">06</div>
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><path d="M8 20l4-8 4 6 3-4 5 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="4" width="24" height="24" rx="2" stroke="currentColor" stroke-width="1.2"/></svg>
+            </div>
+            <h3 class="service-name">Conversion Design</h3>
+            <p class="service-desc">Engineered decision flows that guide high-intent visitors to action. We design conversion architecture from first impression to signed contract — every touchpoint intentional.</p>
+            <div class="service-arrow" aria-hidden="true">→</div>
+          </article>
+
+          <article class="service-item reveal" style="--delay:0.2s" role="listitem">
+            <div class="service-num" aria-hidden="true">07</div>
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="10" stroke="currentColor" stroke-width="1.2"/><path d="M16 10v6l-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M22 6l2-2M10 6L8 4M28 16h2M2 16h2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </div>
+            <h3 class="service-name">Creative Direction</h3>
+            <p class="service-desc">The visual language of market leadership. We craft brand identities, design systems, and creative direction that signal premium positioning at every touchpoint — without compromise.</p>
+            <div class="service-arrow" aria-hidden="true">→</div>
+          </article>
+
+          <article class="service-item reveal" style="--delay:0.28s" role="listitem">
+            <div class="service-num" aria-hidden="true">08</div>
+            <div class="service-icon" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><path d="M16 4L4 10v12l12 6 12-6V10L16 4z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M4 10l12 6m0 0l12-6M16 16v12" stroke="currentColor" stroke-width="1.2"/></svg>
+            </div>
+            <h3 class="service-name">Strategic Advisory</h3>
+            <p class="service-desc">Ongoing strategic counsel for companies navigating critical growth inflections. We serve as your external strategic team — the thinking partner behind your highest-leverage decisions.</p>
+            <div class="service-arrow" aria-hidden="true">→</div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ WORK ═══ -->
+    <section id="work" aria-labelledby="work-heading">
+      <div class="container">
+        <header class="section-header">
+          <div class="section-tag reveal">Selected Work</div>
+          <h2 id="work-heading" class="section-headline reveal" style="--delay:0.1s">
+            Transformations that<br><em>Define Categories</em>
+          </h2>
+        </header>
+
+        <div class="cases-list">
+
+          <article class="case-item reveal" style="--delay:0s">
+            <div class="case-inner">
+              <div class="case-meta">
+                <span class="case-num" aria-hidden="true">01</span>
+                <div class="case-tags">
+                  <span class="case-tag">Brand Positioning</span>
+                  <span class="case-tag">Growth Architecture</span>
+                </div>
+              </div>
+              <div class="case-content">
+                <h3 class="case-client">APEX Capital</h3>
+                <p class="case-category">Private Financial Advisory — São Paulo, Brazil</p>
+                <p class="case-description">Repositioned a $200M AUM financial advisory from undifferentiated commodity to the definitive premium wealth partner for Latin American entrepreneurs. Complete brand overhaul: positioning platform, digital presence, authority content system, and referral architecture.</p>
+              </div>
+              <div class="case-metrics">
+                <div class="case-metric">
+                  <span class="metric-value">340<span class="metric-unit">%</span></span>
+                  <span class="metric-label">Qualified Lead Growth</span>
+                </div>
+                <div class="case-metric">
+                  <span class="metric-value">4.2<span class="metric-unit">×</span></span>
+                  <span class="metric-label">Avg. Ticket Increase</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="case-item reveal" style="--delay:0.1s">
+            <div class="case-inner">
+              <div class="case-meta">
+                <span class="case-num" aria-hidden="true">02</span>
+                <div class="case-tags">
+                  <span class="case-tag">Digital Presence</span>
+                  <span class="case-tag">Authority Framework</span>
+                </div>
+              </div>
+              <div class="case-content">
+                <h3 class="case-client">LUXORA Developments</h3>
+                <p class="case-category">Luxury Real Estate — Miami, USA</p>
+                <p class="case-description">Built the digital brand and market presence for a luxury real estate developer entering a saturated Miami market. From zero digital footprint to industry recognition: premium website experience, authority positioning, editorial content system, and a curated HNW network strategy.</p>
+              </div>
+              <div class="case-metrics">
+                <div class="case-metric">
+                  <span class="metric-value">12K<span class="metric-unit">+</span></span>
+                  <span class="metric-label">HNW Database Built</span>
+                </div>
+                <div class="case-metric">
+                  <span class="metric-value">280<span class="metric-unit">%</span></span>
+                  <span class="metric-label">Referral Conversion Lift</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="case-item reveal" style="--delay:0.2s">
+            <div class="case-inner">
+              <div class="case-meta">
+                <span class="case-num" aria-hidden="true">03</span>
+                <div class="case-tags">
+                  <span class="case-tag">Strategic Advisory</span>
+                  <span class="case-tag">Content Systems</span>
+                </div>
+              </div>
+              <div class="case-content">
+                <h3 class="case-client">MERIDIAN Consulting</h3>
+                <p class="case-category">B2B Management Consulting — London, UK</p>
+                <p class="case-description">Transformed a technical consulting firm into the recognized voice of operational excellence in European manufacturing. Defined their point of view, built a thought leadership engine across 6 channels, and redesigned their entire client acquisition infrastructure around insight-driven positioning.</p>
+              </div>
+              <div class="case-metrics">
+                <div class="case-metric">
+                  <span class="metric-value">8<span class="metric-unit">×</span></span>
+                  <span class="metric-label">Inbound Inquiry Growth</span>
+                </div>
+                <div class="case-metric">
+                  <span class="metric-value">2</span>
+                  <span class="metric-label">Fortune 500 Partnerships</span>
+                </div>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ PROCESS ═══ -->
+    <section id="process" aria-labelledby="process-heading">
+      <div class="container">
+        <header class="section-header">
+          <div class="section-tag reveal">How We Work</div>
+          <h2 id="process-heading" class="section-headline reveal" style="--delay:0.1s">
+            A Process Built<br><em>for Precision</em>
+          </h2>
+        </header>
+
+        <div class="process-steps" role="list">
+
+          <div class="process-step reveal" style="--delay:0s" role="listitem">
+            <div class="step-connector" aria-hidden="true">
+              <span class="step-num">01</span>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <h3 class="step-title">Discovery &amp; Diagnosis</h3>
+              <p class="step-desc">We begin with rigorous inquiry. Deep audit of your current market position, competitive landscape, perception gaps, and latent strengths. We find the truth before we prescribe any direction.</p>
+            </div>
+          </div>
+
+          <div class="process-step reveal" style="--delay:0.1s" role="listitem">
+            <div class="step-connector" aria-hidden="true">
+              <span class="step-num">02</span>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <h3 class="step-title">Strategic Blueprint</h3>
+              <p class="step-desc">Your complete positioning platform: brand architecture, messaging hierarchy, target audience definition, competitive differentiation, and a phased growth roadmap. The foundation for everything that follows.</p>
+            </div>
+          </div>
+
+          <div class="process-step reveal" style="--delay:0.2s" role="listitem">
+            <div class="step-connector" aria-hidden="true">
+              <span class="step-num">03</span>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <h3 class="step-title">Creative Execution</h3>
+              <p class="step-desc">Visual identity, digital presence, content architecture, and brand experience — all engineered to express your positioning with precision. Every element earns its place or it doesn't exist.</p>
+            </div>
+          </div>
+
+          <div class="process-step reveal" style="--delay:0.3s" role="listitem">
+            <div class="step-connector" aria-hidden="true">
+              <span class="step-num">04</span>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <h3 class="step-title">Launch &amp; Activation</h3>
+              <p class="step-desc">Orchestrated market entry across all strategic channels. Authority content activation, digital ecosystem deployment, and outbound positioning campaigns that create immediate category presence.</p>
+            </div>
+          </div>
+
+          <div class="process-step reveal" style="--delay:0.4s" role="listitem">
+            <div class="step-connector" aria-hidden="true">
+              <span class="step-num">05</span>
+              <div class="step-line step-line--last"></div>
+            </div>
+            <div class="step-content">
+              <h3 class="step-title">Growth &amp; Evolution</h3>
+              <p class="step-desc">Continuous strategic partnership: performance analysis, market feedback integration, positioning refinement, and growth system optimization. We build brands that improve with time.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ WHY ═══ -->
+    <section id="why" aria-labelledby="why-heading">
+      <div class="container">
+        <div class="why-grid">
+          <div class="why-left">
+            <div class="section-tag reveal">Why EL NINO</div>
+            <h2 id="why-heading" class="section-headline reveal" style="--delay:0.1s">
+              We don't manage<br>budgets. We build<br><em>market positions.</em>
+            </h2>
+          </div>
+
+          <div class="why-right">
+            <div class="why-items">
+
+              <div class="why-item reveal" style="--delay:0s">
+                <div class="why-item-icon" aria-hidden="true">
+                  <div class="why-icon-dot"></div>
+                </div>
+                <div class="why-item-text">
+                  <h3 class="why-item-title">Strategy before everything</h3>
+                  <p class="why-item-desc">We never accept a brief and start executing. Every engagement begins with diagnosis. The cost of wrong positioning is compounded by every dollar spent amplifying it.</p>
+                </div>
+              </div>
+
+              <div class="why-item reveal" style="--delay:0.1s">
+                <div class="why-item-icon" aria-hidden="true">
+                  <div class="why-icon-dot"></div>
+                </div>
+                <div class="why-item-text">
+                  <h3 class="why-item-title">Engineered for premium markets</h3>
+                  <p class="why-item-desc">Our methods are specifically designed for companies competing at the top of their category — where differentiation is subtle, trust is paramount, and a single mispositioned message costs millions.</p>
+                </div>
+              </div>
+
+              <div class="why-item reveal" style="--delay:0.2s">
+                <div class="why-item-icon" aria-hidden="true">
+                  <div class="why-icon-dot"></div>
+                </div>
+                <div class="why-item-text">
+                  <h3 class="why-item-title">Category-level thinking</h3>
+                  <p class="why-item-desc">We don't optimize for market share. We design for market leadership — positions so distinct that you don't compete with others, you define the standard they aspire to.</p>
+                </div>
+              </div>
+
+              <div class="why-item reveal" style="--delay:0.3s">
+                <div class="why-item-icon" aria-hidden="true">
+                  <div class="why-icon-dot"></div>
+                </div>
+                <div class="why-item-text">
+                  <h3 class="why-item-title">Principal-led engagements</h3>
+                  <p class="why-item-desc">Every engagement is led by senior principals — no handoffs to junior teams, no diluted attention. You work directly with the people who built the methodology.</p>
+                </div>
+              </div>
+
+              <div class="why-item reveal" style="--delay:0.4s">
+                <div class="why-item-icon" aria-hidden="true">
+                  <div class="why-icon-dot"></div>
+                </div>
+                <div class="why-item-text">
+                  <h3 class="why-item-title">End-to-end ownership</h3>
+                  <p class="why-item-desc">From brand foundation to digital ecosystem to growth systems — we hold the entire strategic thread. No disjointed vendors, no translation loss. One vision, fully executed.</p>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ MANIFESTO ═══ -->
+    <section id="manifesto" aria-label="Our manifesto">
+      <div class="manifesto-bg" aria-hidden="true">
+        <div class="manifesto-glow"></div>
+      </div>
+      <div class="container">
+        <div class="manifesto-inner">
+          <div class="manifesto-mark reveal" aria-hidden="true">
+            <svg viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M8 12 C16 4,24 20,32 12 S48 4,56 12 S68 20,72 12" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round" opacity="0.4"/>
+              <path d="M8 25 C16 17,24 33,32 25 S48 17,56 25 S68 33,72 25" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round" opacity="0.6"/>
+              <path d="M8 38 C16 30,24 46,32 38 S48 30,56 38 S68 46,72 38" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+            </svg>
+          </div>
+          <blockquote class="manifesto-text reveal" style="--delay:0.15s">
+            <p>The most powerful brands don't<br class="br-desk">
+            compete for attention.<br>
+            <em>They make competition irrelevant.</em></p>
+          </blockquote>
+          <p class="manifesto-attribution reveal" style="--delay:0.3s">— The EL NINO Principle</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ CONTACT ═══ -->
+    <section id="contact" aria-labelledby="contact-heading">
+      <div class="container">
+        <div class="contact-inner">
+          <div class="contact-tag reveal">
+            <span class="contact-dot" aria-hidden="true"></span>
+            Start a Conversation
+          </div>
+
+          <h2 id="contact-heading" class="contact-headline reveal" style="--delay:0.1s">
+            Your Brand's<br><em>Next Chapter</em><br>Begins Here.
+          </h2>
+
+          <p class="contact-body reveal" style="--delay:0.2s">
+            We work with a select group of companies ready to invest in strategic brand transformation. We don't take every project — we take the right ones. If you're building something that deserves to be known, let's talk.
+          </p>
+
+          <div class="contact-actions reveal" style="--delay:0.3s">
+            <a href="mailto:hello@elninostudio.com" class="contact-email magnetic" aria-label="Email us at hello@elninostudio.com">
+              hello@elninostudio.com
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M7 17L17 7M17 7H7M17 7V17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </a>
+          </div>
+
+          <p class="contact-note reveal" style="--delay:0.4s">
+            Limited to <strong>4 active engagements</strong> — typically 6–8 week lead time for new clients.
+          </p>
+        </div>
+      </div>
+
+      <div class="contact-marquee-wrap" aria-hidden="true">
+        <div class="contact-marquee">
+          <span>From Business to Brand</span>
+          <span aria-hidden="true">·</span>
+          <span>Strategy. Presence. Growth.</span>
+          <span aria-hidden="true">·</span>
+          <span>From Business to Brand</span>
+          <span aria-hidden="true">·</span>
+          <span>Strategy. Presence. Growth.</span>
+          <span aria-hidden="true">·</span>
+          <span>From Business to Brand</span>
+          <span aria-hidden="true">·</span>
+          <span>Strategy. Presence. Growth.</span>
+          <span aria-hidden="true">·</span>
+          <span>From Business to Brand</span>
+          <span aria-hidden="true">·</span>
+          <span>Strategy. Presence. Growth.</span>
+          <span aria-hidden="true">·</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════ FOOTER ═══ -->
+  <footer role="contentinfo">
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-top">
+          <a href="#hero" class="footer-logo" aria-label="EL NINO Studio home">
+            <svg viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M8 12 C16 4,24 20,32 12 S48 4,56 12 S68 20,72 12" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round"/>
+              <path d="M8 25 C16 17,24 33,32 25 S48 17,56 25 S68 33,72 25" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round"/>
+              <path d="M8 38 C16 30,24 46,32 38 S48 30,56 38 S68 46,72 38" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+            <div class="footer-brand-text">
+              <span class="footer-brand-name">EL NINO Studio</span>
+              <span class="footer-brand-tagline">From Business to Brand.</span>
+            </div>
+          </a>
+
+          <nav class="footer-nav" aria-label="Footer navigation">
+            <div class="footer-nav-col">
+              <span class="footer-nav-heading">Studio</span>
+              <a href="#philosophy" class="footer-nav-link">Philosophy</a>
+              <a href="#process" class="footer-nav-link">Process</a>
+              <a href="#why" class="footer-nav-link">Why Us</a>
+            </div>
+            <div class="footer-nav-col">
+              <span class="footer-nav-heading">Work</span>
+              <a href="#services" class="footer-nav-link">Services</a>
+              <a href="#work" class="footer-nav-link">Cases</a>
+            </div>
+            <div class="footer-nav-col">
+              <span class="footer-nav-heading">Contact</span>
+              <a href="mailto:hello@elninostudio.com" class="footer-nav-link">hello@elninostudio.com</a>
+              <a href="#contact" class="footer-nav-link">Start a Project</a>
+            </div>
+          </nav>
+        </div>
+
+        <div class="footer-bottom">
+          <p class="footer-copy">© 2024 EL NINO Studio. All rights reserved.</p>
+          <div class="footer-legal">
+            <a href="#" class="footer-legal-link">Privacy Policy</a>
+            <a href="#" class="footer-legal-link">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

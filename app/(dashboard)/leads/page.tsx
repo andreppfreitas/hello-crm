@@ -570,6 +570,15 @@ function LeadsInner() {
                   </td>
                   <td className="px-3 py-3">
                     <EditableStage lead={lead} onSave={(v) => { updateLead(lead.id, { stage: v }); toast.success(`${t("stage")}: ${STAGE_CONFIG[v].label}`); }} />
+                    {lead.completedStages && lead.completedStages.length > 0 && (
+                      <div className="flex flex-wrap gap-0.5 mt-1">
+                        {lead.completedStages.filter((s) => s !== lead.stage).map((s) => (
+                          <span key={s} className={cn("text-[9px] px-1 py-0.5 rounded font-medium", STAGE_CONFIG[s]?.color, "bg-white/5")}>
+                            ✓ {STAGE_CONFIG[s]?.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="px-3 py-3">
                     {lead.nextAction ? (
