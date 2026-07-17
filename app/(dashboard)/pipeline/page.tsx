@@ -162,20 +162,32 @@ function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance }: { lead
         </div>
       )}
 
-      <div className="flex items-center gap-1.5">
-        <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", STAGE_CONFIG[lead.stage].dot)} />
-        <span className={cn("text-[10px] font-medium truncate flex-1", STAGE_CONFIG[lead.stage].color)}>
-          {STAGE_CONFIG[lead.stage].label}
-        </span>
-        {onAdvance && (
-          <button
-            onClick={onAdvance}
-            title="Avançar para próximo estágio"
-            className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-muted-foreground hover:text-foreground"
-          >
-            <ChevronRight className="w-3 h-3" /> Avançar
-          </button>
-        )}
+      <div className="space-y-1">
+        {/* Primary stage */}
+        <div className="flex items-center gap-1.5">
+          <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0", STAGE_CONFIG[lead.stage].dot)} />
+          <span className={cn("text-[10px] font-medium truncate flex-1", STAGE_CONFIG[lead.stage].color)}>
+            {STAGE_CONFIG[lead.stage].label}
+          </span>
+          {onAdvance && (
+            <button
+              onClick={onAdvance}
+              title="Avançar para próximo estágio"
+              className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-white/5 hover:bg-white/10 text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              <ChevronRight className="w-3 h-3" /> Avançar
+            </button>
+          )}
+        </div>
+        {/* Additional completed stages */}
+        {lead.completedStages && lead.completedStages.filter((s) => s !== lead.stage).map((s) => (
+          <div key={s} className="flex items-center gap-1.5">
+            <span className={cn("w-1.5 h-1.5 rounded-full flex-shrink-0 opacity-60", STAGE_CONFIG[s]?.dot)} />
+            <span className={cn("text-[10px] truncate flex-1 opacity-70", STAGE_CONFIG[s]?.color)}>
+              ✓ {STAGE_CONFIG[s]?.label}
+            </span>
+          </div>
+        ))}
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
