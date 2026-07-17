@@ -137,6 +137,21 @@ export const STAGE_BEHAVIOR_CONFIG: Record<
   closed_lost:               { defaultNextAction: null,                   defaultWaitingFor: null,               responsibleTeam: "consultant", checklist: [] },
 };
 
+// Legacy stage IDs (pre-July 2026 pipeline) — keeps Redis leads from crashing
+Object.assign(STAGE_CONFIG as Record<string, unknown>, {
+  waiting_response:   STAGE_CONFIG.initial_docs_requested,
+  student_said_yes:   STAGE_CONFIG.student_approved_quotation,
+  first_payment:      STAGE_CONFIG.coe_deposit_paid,
+  school_deposit:     STAGE_CONFIG.coe_confirmed,
+  oshc_policy:        STAGE_CONFIG.oshc_issued,
+  visa_payment:       STAGE_CONFIG.visa_fee_paid,
+  visa_checklist_call:STAGE_CONFIG.visa_checklist_sent,
+  statement_reviewed: STAGE_CONFIG.gs_letter_draft_sent,
+  final_doc_check:    STAGE_CONFIG.documents_complete,
+  visa_applied:       STAGE_CONFIG.visa_lodged,
+  final_instructions: STAGE_CONFIG.visa_granted,
+});
+
 export const TEMPERATURE_CONFIG = {
   hot:  { label: "Hot",  color: "text-red-300",    bg: "bg-red-500/20 border-red-500/30",       dot: "bg-red-400",    icon: "🔥" },
   warm: { label: "Warm", color: "text-orange-300", bg: "bg-orange-500/20 border-orange-500/30", dot: "bg-orange-400", icon: "☀️" },
