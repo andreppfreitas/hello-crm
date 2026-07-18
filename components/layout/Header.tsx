@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { PlusCircle, Search, Bell, LogOut, ChevronDown, Menu } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { PlusCircle, LogOut, ChevronDown, Menu } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { GlobalSearch } from "@/components/shared/GlobalSearch";
+import { NotificationBell } from "@/components/shared/NotificationBell";
 
 interface HeaderProps {
   onMenuToggle?: () => void;
@@ -43,7 +44,6 @@ export function Header({ onMenuToggle }: HeaderProps) {
   const router = useRouter();
   const { language, setLanguage, t } = useLanguage();
   const { user } = useAuth();
-  const [search, setSearch] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -92,21 +92,9 @@ export function Header({ onMenuToggle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1.5 md:gap-3">
-        {/* Search — hidden on very small screens, visible md+ */}
-        <div className="relative hidden sm:block">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder={t("search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && search.trim()) {
-                router.push(`/leads?q=${encodeURIComponent(search.trim())}`);
-                setSearch("");
-              }
-            }}
-            className="pl-9 w-40 md:w-52 bg-secondary/50 border-border text-sm"
-          />
+        {/* Global search */}
+        <div className="hidden sm:block">
+          <GlobalSearch />
         </div>
 
         {/* Language toggle */}
@@ -117,11 +105,8 @@ export function Header({ onMenuToggle }: HeaderProps) {
           {language === "pt" ? "🇧🇷 PT" : "🇦🇺 EN"}
         </button>
 
-        {/* Bell */}
-        <button className="relative p-2 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
-        </button>
+        {/* Notification bell */}
+        <NotificationBell />
 
         {/* New Lead — hidden on very small screens */}
         <Link

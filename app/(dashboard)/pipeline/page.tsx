@@ -23,6 +23,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { MessageSquare, CheckSquare, Clock, Phone, ChevronRight } from "lucide-react";
+import { WhatsAppTemplateModal } from "@/components/shared/WhatsAppTemplateModal";
 
 // ── Droppable stage row ─────────────────────────────────────────────────────
 
@@ -68,17 +69,7 @@ function DroppableStageRow({
 
 // ── Draggable card ──────────────────────────────────────────────────────────
 
-function openWhatsApp(lead: Lead, e: React.MouseEvent) {
-  e.stopPropagation();
-  const raw = lead.phone.replace(/\D/g, "");
-  const phone = raw.startsWith("55") ? raw : `55${raw}`;
-  const firstName = lead.fullName.split(" ")[0];
-  const consultantFirstName = lead.assignedConsultant.split(" ")[0];
-  const message = `Olá ${firstName}! Tudo bem? 😊 Aqui é o/a ${consultantFirstName} da Hello Australia. Queria saber se ainda tem interesse em estudar na Austrália! Pode me passar mais detalhes sobre seus planos?`;
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
-}
-
-function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance }: { lead: Lead; isDragging?: boolean; groupPartnerName?: string; onAdvance?: (e: React.MouseEvent) => void }) {
+function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance, onWhatsApp }: { lead: Lead; isDragging?: boolean; groupPartnerName?: string; onAdvance?: (e: React.MouseEvent) => void; onWhatsApp?: (e: React.MouseEvent) => void }) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: lead.id });
 
   const style = transform
@@ -127,8 +118,8 @@ function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance }: { lead
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
-            onClick={(e) => openWhatsApp(lead, e)}
-            title="Abrir WhatsApp"
+            onClick={(e) => onWhatsApp?.(e)}
+            title="Enviar WhatsApp"
             className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
           >
             <Phone className="w-3 h-3" />
@@ -237,6 +228,7 @@ function PipelineInner() {
   const consultantFilter = searchParams.get("consultant") ?? "";
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeOverId, setActiveOverId] = useState<string | null>(null);
+  const [waLead, setWaLead] = useState<Lead | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -281,6 +273,7 @@ function PipelineInner() {
 
   return (
     <div className="flex flex-col gap-3 h-full overflow-hidden">
+      {waLead && <WhatsAppTemplateModal lead={waLead} isOpen={!!waLead} onClose={() => setWaLead(null)} />}
       {consultantFilter && (
         <div className="flex items-center gap-2 px-1 flex-shrink-0">
           <span className="text-xs text-muted-foreground">Pipeline de:</span>
@@ -346,6 +339,7 @@ function PipelineInner() {
                         lead={lead}
                         isDragging={lead.id === activeId}
                         groupPartnerName={partnerName || undefined}
+                        onWhatsApp={(e) => { e.stopPropagation(); setWaLead(lead); }}
                         onAdvance={nextStage ? (e) => {
                           e.stopPropagation();
                           if (lead.groupId) {

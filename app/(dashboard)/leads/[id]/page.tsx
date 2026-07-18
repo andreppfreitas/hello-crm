@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import type { Lead, PipelineStage, LeadTemperature, Task, Note } from "@/types";
 import { AnimatePresence, motion } from "framer-motion";
 import { WhatsAppButton } from "@/components/shared/WhatsAppButton";
+import { WhatsAppTemplateModal } from "@/components/shared/WhatsAppTemplateModal";
 import { TemplateDrawer } from "@/components/shared/TemplateDrawer";
 import { ReminderModal } from "@/components/shared/ReminderModal";
 import { GroupModal } from "@/components/shared/GroupModal";
@@ -43,6 +44,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
   const [showTemplates, setShowTemplates] = useState(false);
   const [showReminder, setShowReminder] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
+  const [showWaModal, setShowWaModal] = useState(false);
 
   if (!lead) return notFound();
 
@@ -180,20 +182,14 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
               </div>
               {lead.phone && (
                 <button
-                  onClick={() => {
-                    const raw = lead.phone.replace(/\D/g, "");
-                    const phone = raw.startsWith("55") ? raw : `55${raw}`;
-                    const firstName = lead.fullName.split(" ")[0];
-                    const consultantFirstName = lead.assignedConsultant.split(" ")[0];
-                    const message = `Olá ${firstName}! Tudo bem? 😊 Aqui é o/a ${consultantFirstName} da Hello Australia. Queria saber se ainda tem interesse em estudar na Austrália! Pode me passar mais detalhes sobre seus planos?`;
-                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, "_blank");
-                  }}
-                  title="Abrir WhatsApp"
+                  onClick={() => setShowWaModal(true)}
+                  title="Enviar WhatsApp"
                   className="flex-shrink-0 p-1.5 rounded-lg bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 transition-colors"
                 >
                   <Phone className="w-3.5 h-3.5" />
                 </button>
               )}
+              <WhatsAppTemplateModal lead={lead} isOpen={showWaModal} onClose={() => setShowWaModal(false)} />
             </div>
             <InfoRow icon={Mail} label={lead.email} />
             <InfoRow icon={MapPin} label={lead.currentLocation} />
