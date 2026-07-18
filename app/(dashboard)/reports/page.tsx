@@ -8,7 +8,7 @@ import {
   FunnelChart, Funnel, LabelList,
 } from "recharts";
 import { cn, formatCurrency } from "@/lib/utils";
-import { TrendingUp, Clock, DollarSign } from "lucide-react";
+import { TrendingUp, Clock, CheckSquare, AlertCircle } from "lucide-react";
 
 const COLORS = ["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#f43f5e", "#06b6d4", "#84cc16", "#ec4899"];
 
@@ -66,28 +66,11 @@ export default function ReportsPage() {
           .map((h) => (new Date(h.exitedAt!).getTime() - new Date(h.enteredAt).getTime()) / 86400000)
       );
       const avg = entries.length > 0 ? entries.reduce((a, b) => a + b, 0) / entries.length : 0;
-      return { stage: STAGE_CONFIG[stage].label.slice(0, 18), days: Math.round(avg * 10) / 10, phase };
+      const lbl = STAGE_CONFIG[stage].label;
+      const stageLabel = lbl.length > 18 ? lbl.slice(0, 18).replace(/\s\S*$/, '') : lbl;
+      return { stage: stageLabel, days: Math.round(avg * 10) / 10, phase };
     })
   ).filter((d) => d.days > 0).sort((a, b) => b.days - a.days).slice(0, 10);
-
-  // Revenue forecast (next 90 days from pending payments)
-  const now = new Date();
-  const in30 = new Date(now); in30.setDate(now.getDate() + 30);
-  const in60 = new Date(now); in60.setDate(now.getDate() + 60);
-  const in90 = new Date(now); in90.setDate(now.getDate() + 90);
-
-  const allPayments = leads.flatMap((l) => l.payments.filter((p) => p.status === "pending" && p.dueDate));
-  function sumPayments(from: Date, to: Date) {
-    return allPayments
-      .filter((p) => { const d = new Date(p.dueDate!); return d >= from && d < to; })
-      .reduce((sum, p) => sum + p.amount, 0);
-  }
-  const forecastData = [
-    { period: "0–30 dias", amount: sumPayments(now, in30), fill: "#f59e0b" },
-    { period: "31–60 dias", amount: sumPayments(in30, in60), fill: "#3b82f6" },
-    { period: "61–90 dias", amount: sumPayments(in60, in90), fill: "#8b5cf6" },
-  ];
-  const totalForecast = forecastData.reduce((s, d) => s + d.amount, 0);
 
   const visaRate = leads.length > 0
     ? Math.round((leads.filter((l) => STAGE_CONFIG[l.stage]?.phase === "visa").length / leads.length) * 100)
@@ -193,7 +176,6 @@ export default function ReportsPage() {
             <FunnelChart>
               <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`${v} leads`, ""]} />
               <Funnel dataKey="value" data={funnelData} isAnimationActive>
-                <LabelList position="right" fill="#94a3b8" fontSize={11} dataKey="name" />
                 {funnelData.map((entry, i) => (
                   <Cell key={i} fill={entry.fill} />
                 ))}
@@ -264,35 +246,59 @@ export default function ReportsPage() {
           )}
         </div>
 
-        {/* Revenue forecast */}
+        {/* Upcoming Tasks */}
         <div className="glass-card rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <DollarSign className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-sm font-semibold">Revenue Forecast (90 dias)</h3>
+          <div className="flex items-center gap-2 mb-4">
+            <CheckSquare className="w-4 h-4 text-blue-400" />
+            <h3 className="text-sm font-semibold">Próximas Tarefas</h3>
+            <span className="text-xs text-muted-foreground ml-auto">próximos 7 dias</span>
           </div>
-          <p className="text-xs text-muted-foreground mb-4">Pagamentos pendentes por período</p>
-          <div className="text-3xl font-bold text-foreground mb-4">
-            {formatCurrency(totalForecast)}
-            <span className="text-sm font-normal text-muted-foreground ml-2">projetado</span>
-          </div>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={forecastData} barCategoryGap="35%">
-              <XAxis dataKey="period" tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#94a3b8", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `$${Math.round(v / 1000)}k`} />
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [formatCurrency(v), "Previsto"]} />
-              <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-                {forecastData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            {forecastData.map((d) => (
-              <div key={d.period} className="text-center p-2 rounded-lg bg-secondary/30">
-                <p className="text-xs text-muted-foreground">{d.period}</p>
-                <p className="text-sm font-bold text-foreground mt-0.5">{formatCurrency(d.amount)}</p>
+          {(() => {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const in7 = new Date(today); in7.setDate(today.getDate() + 7);
+            const upcoming = leads
+              .flatMap((l) => (l.tasks ?? [])
+                .filter((t) => !t.completed && t.dueDate)
+                .map((t) => ({ lead: l, task: t, due: new Date(t.dueDate!) }))
+              )
+              .filter((x) => x.due <= in7)
+              .sort((a, b) => a.due.getTime() - b.due.getTime())
+              .slice(0, 8);
+            if (upcoming.length === 0) return (
+              <p className="text-sm text-muted-foreground text-center py-6">Nenhuma tarefa nos próximos 7 dias.</p>
+            );
+            return (
+              <div className="space-y-2">
+                {upcoming.map(({ lead, task, due }) => {
+                  const isOverdue = due < today;
+                  const isToday = due.toDateString() === today.toDateString();
+                  const color = isOverdue ? "text-red-400" : isToday ? "text-amber-400" : "text-emerald-400";
+                  const dot = isOverdue ? "bg-red-400" : isToday ? "bg-amber-400" : "bg-emerald-400";
+                  return (
+                    <div key={task.id} className="flex items-start gap-2.5 py-2 border-b border-border/40 last:border-0">
+                      <div className={cn("w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0", dot)} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-foreground truncate">{lead.fullName}</p>
+                        <p className="text-xs text-muted-foreground truncate">{task.title}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className={cn("text-xs font-semibold", color)}>
+                          {isOverdue ? "Atrasada" : isToday ? "Hoje" : due.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{lead.assignedConsultant.split(" ")[0]}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            );
+          })()}
+          {leads.flatMap((l) => l.tasks ?? []).filter((t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()).length > 0 && (
+            <div className="mt-3 flex items-center gap-1.5 text-xs text-red-400">
+              <AlertCircle className="w-3 h-3" />
+              {leads.flatMap((l) => l.tasks ?? []).filter((t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date(new Date().setHours(0,0,0,0))).length} tarefa(s) atrasada(s)
+            </div>
+          )}
         </div>
       </div>
 
