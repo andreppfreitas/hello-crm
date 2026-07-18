@@ -50,7 +50,7 @@ export default function DashboardPage() {
   })).filter((d) => d.leads > 0);
 
   const courseCounts = leads.reduce<Record<string, number>>((acc, l) => {
-    const c = l.courseInterest?.trim();
+    const c = l.chosenCourse?.trim();
     if (!c) return acc;
     acc[c] = (acc[c] ?? 0) + 1;
     return acc;
@@ -251,7 +251,7 @@ export default function DashboardPage() {
 
         {/* Course distribution */}
         <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Course Interest</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Cursos Confirmados</h3>
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie data={courseData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} paddingAngle={3}>

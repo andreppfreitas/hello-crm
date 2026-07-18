@@ -180,6 +180,9 @@ export interface Lead {
   stageChanges: StageChangeEvent[];
   visaChecklist: VisaChecklistItem[];
   score?: number;
+  // Enrollment — escola e curso confirmados
+  chosenSchool?: string;
+  chosenCourse?: string;
   // Visa / offshore status
   currentVisaType?: string;
   visaExpiryDate?: string;      // ISO date string YYYY-MM-DD

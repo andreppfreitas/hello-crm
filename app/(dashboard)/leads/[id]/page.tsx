@@ -259,10 +259,17 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
 
           {/* Course & budget */}
           <div className="glass-card rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Curso & Orçamento</h3>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Interesse</h3>
             <EditableSelect icon={BookOpen} value={lead.courseInterest} options={COURSES} onSave={(v) => updateLead(lead.id, { courseInterest: v })} />
             <EditableSelect icon={MapPin} value={lead.preferredCity} options={CITIES} onSave={(v) => updateLead(lead.id, { preferredCity: v })} />
             <EditableField icon={DollarSign} value={lead.budget} placeholder="Orçamento" onSave={(v) => updateLead(lead.id, { budget: v })} />
+          </div>
+
+          {/* Matrícula confirmada */}
+          <div className="glass-card rounded-xl p-4 space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Matrícula Confirmada</h3>
+            <EditableField icon={BookOpen} value={lead.chosenCourse} placeholder="Curso escolhido" onSave={(v) => updateLead(lead.id, { chosenCourse: v || undefined })} />
+            <EditableField icon={MapPin} value={lead.chosenSchool} placeholder="Escola escolhida" onSave={(v) => updateLead(lead.id, { chosenSchool: v || undefined })} />
           </div>
 
           {/* CRM info */}
