@@ -23,19 +23,24 @@ export default function DashboardPage() {
   const { stats, leads } = useCRM();
   const { t } = useLanguage();
 
-  // Build city data from actual lead values (case-insensitive), not just the CITIES constant
-  const cityCounts = leads.reduce<Record<string, number>>((acc, l) => {
-    const city = l.preferredCity?.trim();
-    if (!city) return acc;
-    // Normalize to title case match against known cities, otherwise keep as-is
-    const known = CITIES.find((c) => c.toLowerCase() === city.toLowerCase());
-    const key = known ?? city;
-    acc[key] = (acc[key] ?? 0) + 1;
-    return acc;
-  }, {});
-  const cityData = Object.entries(cityCounts)
-    .map(([city, count]) => ({ city, count }))
-    .sort((a, b) => b.count - a.count);
+  const CITY_LIST = ["Sydney", "Melbourne", "Brisbane", "Gold Coast", "Adelaide", "Canberra", "Perth"];
+  const cityData = [
+    ...CITY_LIST.map((city) => ({
+      city,
+      count: leads.filter((l) => l.preferredCity?.trim().toLowerCase() === city.toLowerCase()).length,
+    })),
+    {
+      city: "Outra",
+      count: leads.filter((l) => {
+        const v = l.preferredCity?.trim().toLowerCase() ?? "";
+        return v && !CITY_LIST.map((c) => c.toLowerCase()).includes(v) && v !== "offshore";
+      }).length,
+    },
+    {
+      city: "Offshore",
+      count: leads.filter((l) => l.preferredCity?.trim().toLowerCase() === "offshore" || l.isOffshore).length,
+    },
+  ];
 
   const consultantData = CONSULTANTS.map((name) => ({
     name: name.split(" ")[0],
@@ -43,10 +48,16 @@ export default function DashboardPage() {
     visa: leads.filter((l) => l.assignedConsultant === name && STAGE_CONFIG[l.stage]?.phase === "visa").length,
   })).filter((d) => d.leads > 0);
 
-  const courseData = COURSES.slice(0, 6).map((course) => ({
-    name: course.split("–")[0].trim(),
-    value: leads.filter((l) => typeof l.courseInterest === "string" && l.courseInterest.includes(course.split("–")[0].trim())).length,
-  })).filter((d) => d.value > 0);
+  const courseCounts = leads.reduce<Record<string, number>>((acc, l) => {
+    const c = l.courseInterest?.trim();
+    if (!c) return acc;
+    acc[c] = (acc[c] ?? 0) + 1;
+    return acc;
+  }, {});
+  const courseData = Object.entries(courseCounts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
 
   const hotLeads = leads.filter((l) => l.temperature === "hot").slice(0, 5);
 
