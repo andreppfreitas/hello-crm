@@ -8,6 +8,7 @@ import { formatDate, formatCurrency, initials, isOverdue } from "@/lib/utils";
 import { computeScore, scoreColor, scoreBarColor } from "@/lib/scoring";
 import type { VisaChecklistItem, NextAction, WaitingFor } from "@/types";
 import { STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG, CONSULTANTS, CITIES, COURSES, TASK_TEMPLATES, STAGE_BEHAVIOR_CONFIG, NEXT_ACTION_CONFIG, NEXT_ACTION_OPTIONS, WAITING_FOR_CONFIG, WAITING_FOR_OPTIONS } from "@/lib/constants";
+import { getAutoTasks, getAutoTaskDef } from "@/lib/auto-tasks";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -555,11 +556,32 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
 
             {activeTab === "Tasks" && (
               <div className="space-y-3">
+                {/* Auto tasks — virtual, derived from missing lead data */}
+                {getAutoTasks(lead).map((autoTask) => {
+                  const def = getAutoTaskDef(autoTask.id);
+                  return (
+                    <div key={autoTask.id} className="flex items-start gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/8">
+                      <div className="w-5 h-5 rounded border border-amber-500/50 flex items-center justify-center flex-shrink-0 mt-0.5 bg-amber-500/15">
+                        <span className="text-[9px] text-amber-400">!</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-medium text-amber-300">{autoTask.title}</p>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">Auto</span>
+                        </div>
+                        {def && <p className="text-xs text-muted-foreground mt-0.5">{def.description}</p>}
+                      </div>
+                    </div>
+                  );
+                })}
+
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Tasks for {STAGE_CONFIG[lead.stage]?.label ?? lead.stage}</h3>
+                  <h3 className="text-sm font-semibold">Tasks · {STAGE_CONFIG[lead.stage]?.label ?? lead.stage}</h3>
                   <span className="text-xs text-muted-foreground">{completedCount}/{stageTasks.length} done</span>
                 </div>
-                {stageTasks.length === 0 && <p className="text-sm text-muted-foreground">No tasks for this stage.</p>}
+                {stageTasks.length === 0 && getAutoTasks(lead).length === 0 && (
+                  <p className="text-sm text-muted-foreground">Nenhuma task para este estágio.</p>
+                )}
                 {stageTasks.map((task) => (
                   <div
                     key={task.id}

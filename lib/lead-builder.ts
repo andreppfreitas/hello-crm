@@ -45,7 +45,7 @@ export function buildNewLead(
   return {
     ...data,
     id,
-    tasks: buildTasksForStage(data.stage, id),
+    tasks: [],
     contactHistory: [],
     payments: [],
     documents: [],

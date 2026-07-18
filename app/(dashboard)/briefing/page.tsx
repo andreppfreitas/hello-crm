@@ -4,13 +4,14 @@ import { useCRM } from "@/contexts/CRMContext";
 import { formatDate, isOverdue, daysUntil, formatCurrency } from "@/lib/utils";
 import { STAGE_CONFIG } from "@/lib/constants";
 import { computeScore, scoreColor, scoreBarColor } from "@/lib/scoring";
+import { getAutoTasks } from "@/lib/auto-tasks";
 import { StageBadge } from "@/components/shared/StageBadge";
 import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
 import { cn, initials } from "@/lib/utils";
 import Link from "next/link";
 import {
   AlertTriangle, Flame, Clock, CreditCard, TrendingDown,
-  CheckSquare, Calendar, Bell, Sparkles,
+  CheckSquare, Calendar, Bell, Sparkles, ClipboardList,
 } from "lucide-react";
 
 function SectionCard({ icon: Icon, title, color, count, children }: {
@@ -119,7 +120,10 @@ const entry = l.stageHistory.find((h) => h.stage === l.stage && !h.exitedAt);
     ["visa_lodged", "medical_requested", "visa_granted"].includes(l.stage)
   );
 
-  const totalActions = hotNoContact.length + overdueTaskLeads.length + paymentsDueThisWeek.length + stuckLeads.length + overdueReminders.length;
+  // 8. Leads with missing required data (auto tasks)
+  const incompleteLeads = leads.filter((l) => getAutoTasks(l).length > 0);
+
+  const totalActions = hotNoContact.length + overdueTaskLeads.length + paymentsDueThisWeek.length + stuckLeads.length + overdueReminders.length + incompleteLeads.length;
 
   const today = new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
 
@@ -252,7 +256,21 @@ const entry = l.stageHistory.find((h) => h.stage === l.stage && !h.exitedAt);
         ))}
       </SectionCard>
 
-      {totalActions === 0 && meetingsThisWeek.length === 0 && visaLeads.length === 0 && (
+      {/* 8. Incomplete profiles */}
+      <SectionCard icon={ClipboardList} title="Dados Incompletos" color="amber" count={incompleteLeads.length}>
+        {incompleteLeads.slice(0, 8).map((lead) => {
+          const autoTasks = getAutoTasks(lead);
+          return (
+            <LeadRow key={lead.id} lead={lead} meta={
+              <span className="text-xs text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-full">
+                {autoTasks.map((t) => t.title).join(" · ")}
+              </span>
+            } />
+          );
+        })}
+      </SectionCard>
+
+      {totalActions === 0 && meetingsThisWeek.length === 0 && visaLeads.length === 0 && incompleteLeads.length === 0 && (
         <div className="glass-card rounded-2xl p-12 text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto">
             <Sparkles className="w-7 h-7 text-emerald-400" />
