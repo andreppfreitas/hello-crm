@@ -23,22 +23,23 @@ export default function DashboardPage() {
   const { stats, leads } = useCRM();
   const { t } = useLanguage();
 
-  const CITY_LIST = ["Sydney", "Melbourne", "Brisbane", "Gold Coast", "Adelaide", "Canberra", "Perth"];
+  const AU_CITIES = ["Sydney", "Melbourne", "Brisbane", "Gold Coast", "Adelaide", "Canberra", "Perth"];
   const cityData = [
-    ...CITY_LIST.map((city) => ({
+    ...AU_CITIES.map((city) => ({
       city,
-      count: leads.filter((l) => l.preferredCity?.trim().toLowerCase() === city.toLowerCase()).length,
+      count: leads.filter((l) => l.currentLocation?.toLowerCase().includes(city.toLowerCase())).length,
     })),
     {
-      city: "Outra",
+      city: "Outros",
       count: leads.filter((l) => {
-        const v = l.preferredCity?.trim().toLowerCase() ?? "";
-        return v && !CITY_LIST.map((c) => c.toLowerCase()).includes(v) && v !== "offshore";
+        if (l.isOffshore) return false;
+        const loc = l.currentLocation?.toLowerCase() ?? "";
+        return !AU_CITIES.some((c) => loc.includes(c.toLowerCase()));
       }).length,
     },
     {
       city: "Offshore",
-      count: leads.filter((l) => l.preferredCity?.trim().toLowerCase() === "offshore" || l.isOffshore).length,
+      count: leads.filter((l) => l.isOffshore).length,
     },
   ];
 
@@ -237,7 +238,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Leads by city */}
         <div className="glass-card rounded-xl p-5 lg:col-span-2">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Leads by Preferred City</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Alunos por Cidade Atual</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={cityData} barCategoryGap="30%">
               <XAxis dataKey="city" tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
