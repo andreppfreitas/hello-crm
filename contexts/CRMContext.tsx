@@ -5,7 +5,7 @@ import {
   useEffect, type ReactNode,
 } from "react";
 import type { Lead, DashboardStats, Reminder } from "@/types";
-import { STAGE_CONFIG } from "@/lib/constants";
+import { STAGE_CONFIG, STAGE_AUTO_REMINDER } from "@/lib/constants";
 import { buildNewLead, uid } from "@/lib/lead-builder";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -126,6 +126,32 @@ export function CRMProvider({ children }: { children: ReactNode }) {
 
   const updateLead = useCallback((id: string, data: Partial<Lead>) => {
     setLeads((prev) => {
+      const current = prev.find((l) => l.id === id);
+      // Auto-reminder when stage changes
+      if (data.stage && current && data.stage !== current.stage) {
+        const cfg = STAGE_AUTO_REMINDER[data.stage];
+        if (cfg) {
+          const dueAt = new Date();
+          dueAt.setDate(dueAt.getDate() + cfg.days);
+          const reminder: Reminder = {
+            id: `rem-auto-${uid()}`,
+            leadId: id,
+            leadName: current.fullName,
+            type: cfg.type,
+            note: cfg.message,
+            dueAt: dueAt.toISOString(),
+            completed: false,
+            createdAt: new Date().toISOString(),
+            authorName: "Sistema",
+          };
+          setReminders((r) => [reminder, ...r]);
+          fetch("/api/reminders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(reminder),
+          });
+        }
+      }
       const next = prev.map((l) =>
         l.id === id ? { ...l, ...data, updatedAt: new Date().toISOString() } : l
       );
@@ -137,7 +163,7 @@ export function CRMProvider({ children }: { children: ReactNode }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }).catch(() => toast.error("Erro ao atualizar lead"));
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const removeLead = useCallback((id: string) => {
     setLeads((prev) => {

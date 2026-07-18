@@ -1,4 +1,5 @@
 import type { PipelineStage, PhaseGroup, NextAction, WaitingFor } from "@/types";
+import type { Reminder } from "@/types";
 
 export const STAGE_CONFIG: Record<
   PipelineStage,
@@ -58,6 +59,27 @@ export const PHASE_CONFIG: Record<
 export const PHASE_ORDER: PhaseGroup[] = ["leads", "qualifying", "proposal", "enrollment", "documents", "payments", "visa"];
 
 export const ALL_STAGES: PipelineStage[] = Object.keys(STAGE_CONFIG) as PipelineStage[];
+
+// ─── Stage auto-reminders ─────────────────────────────────────────────────────
+// When a lead enters one of these stages, a reminder is auto-created for the consultant.
+export const STAGE_AUTO_REMINDER: Partial<Record<PipelineStage, {
+  days: number;
+  message: string;
+  type: Reminder["type"];
+}>> = {
+  initial_docs_requested: { days: 2,  message: "Follow-up: documentos iniciais ainda pendentes",           type: "whatsapp" },
+  meeting_scheduled:      { days: 1,  message: "Confirmar reunião com o aluno amanhã",                     type: "call"     },
+  followup:               { days: 3,  message: "Lead em follow-up — checar interesse e objeções",          type: "whatsapp" },
+  student_approved_quotation: { days: 1, message: "Aluno aprovou cotação — iniciar aplicação na escola",   type: "other"    },
+  application_sent:       { days: 5,  message: "Verificar retorno da escola sobre a aplicação",            type: "email"    },
+  offer_letter_received:  { days: 2,  message: "Enviar cotação final ao aluno com a offer letter",         type: "whatsapp" },
+  student_uploading_docs: { days: 3,  message: "Checar progresso dos documentos com o aluno",              type: "whatsapp" },
+  coe_deposit_paid:       { days: 1,  message: "Confirmar emissão do CoE com a escola",                    type: "email"    },
+  oshc_payment:           { days: 2,  message: "Confirmar emissão da apólice OSHC",                        type: "other"    },
+  visa_lodged:            { days: 7,  message: "Verificar status do visto no ImmiAccount",                 type: "other"    },
+  medical_requested:      { days: 5,  message: "Checar se aluno agendou exame médico",                     type: "whatsapp" },
+  visa_granted:           { days: 1,  message: "Parabéns ao aluno e enviar checklist pré-embarque!",       type: "whatsapp" },
+};
 
 // ─── Next Action labels ───────────────────────────────────────────────────────
 export const NEXT_ACTION_CONFIG: Record<NonNullable<NextAction>, { label: string; icon: string }> = {

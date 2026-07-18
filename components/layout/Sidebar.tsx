@@ -18,6 +18,7 @@ import {
   X,
   UserCog,
   Activity,
+  TrendingUp,
 } from "lucide-react";
 import { useCRM } from "@/contexts/CRMContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -46,6 +47,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     { href: "/reminders", label: t("reminders"), icon: Bell, badge: true },
     { href: "/briefing", label: t("briefing"), icon: Sparkles },
     { href: "/reports", label: t("reports"), icon: BarChart3 },
+    { href: "/funil", label: "Funil", icon: TrendingUp },
     { href: "/import", label: t("import"), icon: Upload },
     ...(user?.role === "admin" ? [
       { href: "/users", label: "Equipe", icon: UserCog },
