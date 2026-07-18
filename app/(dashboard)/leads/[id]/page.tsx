@@ -808,7 +808,7 @@ const VISA_CATEGORY_LABELS: Record<VisaChecklistItem["category"], string> = {
   enrollment: "🎓 Matrícula",
   financial: "💰 Financeiro",
   health: "🏥 Saúde / Segurança",
-  other: "📋 Outros",
+  other: "📋 Formulários de Visto",
 };
 
 const STATUS_STYLES: Record<VisaChecklistItem["status"], { label: string; className: string }> = {
