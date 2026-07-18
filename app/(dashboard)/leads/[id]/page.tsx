@@ -135,7 +135,11 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
             {initials(lead.fullName)}
           </div>
           <div className="min-w-0">
-            <h2 className="text-lg sm:text-xl font-bold text-foreground truncate">{lead.fullName}</h2>
+            <input
+              defaultValue={lead.fullName}
+              onBlur={(e) => { if (e.target.value.trim() && e.target.value !== lead.fullName) updateLead(lead.id, { fullName: e.target.value.trim() }); }}
+              className="text-lg sm:text-xl font-bold text-foreground bg-transparent border-b border-transparent hover:border-border focus:border-primary/50 outline-none transition-colors w-full"
+            />
             <p className="text-xs sm:text-sm text-muted-foreground truncate">{lead.courseInterest} · {lead.preferredCity}</p>
           </div>
         </div>
@@ -178,7 +182,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contato</h3>
             <div className="flex items-center gap-2">
               <div className="flex-1">
-                <InfoRow icon={Phone} label={lead.phone} />
+                <EditableField icon={Phone} value={lead.phone} placeholder="Telefone" onSave={(v) => updateLead(lead.id, { phone: v })} type="tel" />
               </div>
               {lead.phone && (
                 <button
@@ -191,9 +195,9 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
               )}
               <WhatsAppTemplateModal lead={lead} isOpen={showWaModal} onClose={() => setShowWaModal(false)} />
             </div>
-            <InfoRow icon={Mail} label={lead.email} />
-            <InfoRow icon={MapPin} label={lead.currentLocation} />
-            <InfoRow icon={Globe} label={lead.country} />
+            <EditableField icon={Mail} value={lead.email} placeholder="Email" onSave={(v) => updateLead(lead.id, { email: v })} type="email" />
+            <EditableField icon={MapPin} value={lead.currentLocation} placeholder="Localização atual" onSave={(v) => updateLead(lead.id, { currentLocation: v })} />
+            <EditableField icon={Globe} value={lead.country} placeholder="País de origem" onSave={(v) => updateLead(lead.id, { country: v })} />
           </div>
 
           {/* Visa / offshore */}
@@ -254,18 +258,18 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
 
           {/* Course & budget */}
           <div className="glass-card rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Course Details</h3>
-            <InfoRow icon={BookOpen} label={lead.courseInterest || "Not specified"} />
-            <InfoRow icon={MapPin} label={`Preferred: ${lead.preferredCity || "Any"}`} />
-            <InfoRow icon={DollarSign} label={lead.budget || "Not specified"} />
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Curso & Orçamento</h3>
+            <EditableSelect icon={BookOpen} value={lead.courseInterest} options={COURSES} onSave={(v) => updateLead(lead.id, { courseInterest: v })} />
+            <EditableSelect icon={MapPin} value={lead.preferredCity} options={CITIES} onSave={(v) => updateLead(lead.id, { preferredCity: v })} />
+            <EditableField icon={DollarSign} value={lead.budget} placeholder="Orçamento" onSave={(v) => updateLead(lead.id, { budget: v })} />
           </div>
 
           {/* CRM info */}
           <div className="glass-card rounded-xl p-4 space-y-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">CRM</h3>
-            <InfoRow icon={User} label={lead.assignedConsultant} />
-            <InfoRow icon={MessageSquare} label={`Source: ${lead.source}`} />
-            <InfoRow icon={Calendar} label={`Added ${formatDate(lead.createdAt, "relative")}`} />
+            <EditableSelect icon={User} value={lead.assignedConsultant} options={CONSULTANTS} onSave={(v) => updateLead(lead.id, { assignedConsultant: v })} />
+            <EditableSelect icon={MessageSquare} value={lead.source} options={["Facebook Group","Instagram","Referral","Website","WhatsApp","Walk-in","Event","LinkedIn","Other"]} onSave={(v) => updateLead(lead.id, { source: v })} />
+            <InfoRow icon={Calendar} label={`Adicionado ${formatDate(lead.createdAt, "relative")}`} />
           </div>
 
           {/* Lead score */}
@@ -888,6 +892,44 @@ function InfoRow({ icon: Icon, label }: { icon: React.ElementType; label: string
     <div className="flex items-center gap-2.5 text-sm">
       <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
       <span className="text-foreground truncate">{label}</span>
+    </div>
+  );
+}
+
+function EditableField({
+  icon: Icon, value, placeholder, onSave, type = "text",
+}: {
+  icon: React.ElementType; value?: string; placeholder: string; onSave: (v: string) => void; type?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+      <input
+        type={type}
+        defaultValue={value ?? ""}
+        onBlur={(e) => { if (e.target.value !== (value ?? "")) onSave(e.target.value); }}
+        placeholder={placeholder}
+        className="flex-1 text-sm bg-transparent border-b border-transparent hover:border-border focus:border-primary/50 text-foreground placeholder:text-muted-foreground/50 outline-none transition-colors py-0.5 min-w-0"
+      />
+    </div>
+  );
+}
+
+function EditableSelect({
+  icon: Icon, value, options, onSave,
+}: {
+  icon: React.ElementType; value?: string; options: string[]; onSave: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2.5">
+      <Icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+      <select
+        value={value ?? ""}
+        onChange={(e) => onSave(e.target.value)}
+        className="flex-1 text-sm bg-transparent border-b border-transparent hover:border-border focus:border-primary/50 text-foreground outline-none transition-colors py-0.5 cursor-pointer"
+      >
+        {options.map((o) => <option key={o} value={o} className="bg-background">{o}</option>)}
+      </select>
     </div>
   );
 }
