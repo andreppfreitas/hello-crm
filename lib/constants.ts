@@ -208,7 +208,6 @@ export const TASK_TEMPLATES: Record<PipelineStage, string[]> = {
 
 export const CONSULTANTS = [
   "André Perez",
-  "Andrew Oliveira",
 ];
 
 export const COURSES: string[] = [

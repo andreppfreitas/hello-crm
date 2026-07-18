@@ -23,10 +23,19 @@ export default function DashboardPage() {
   const { stats, leads } = useCRM();
   const { t } = useLanguage();
 
-  const cityData = CITIES.map((city) => ({
-    city,
-    count: leads.filter((l) => l.preferredCity === city).length,
-  })).sort((a, b) => b.count - a.count);
+  // Build city data from actual lead values (case-insensitive), not just the CITIES constant
+  const cityCounts = leads.reduce<Record<string, number>>((acc, l) => {
+    const city = l.preferredCity?.trim();
+    if (!city) return acc;
+    // Normalize to title case match against known cities, otherwise keep as-is
+    const known = CITIES.find((c) => c.toLowerCase() === city.toLowerCase());
+    const key = known ?? city;
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+  const cityData = Object.entries(cityCounts)
+    .map(([city, count]) => ({ city, count }))
+    .sort((a, b) => b.count - a.count);
 
   const consultantData = CONSULTANTS.map((name) => ({
     name: name.split(" ")[0],
