@@ -41,7 +41,7 @@ export default function DashboardPage() {
     name: name.split(" ")[0],
     leads: leads.filter((l) => l.assignedConsultant === name).length,
     visa: leads.filter((l) => l.assignedConsultant === name && STAGE_CONFIG[l.stage]?.phase === "visa").length,
-  }));
+  })).filter((d) => d.leads > 0);
 
   const courseData = COURSES.slice(0, 6).map((course) => ({
     name: course.split("–")[0].trim(),
