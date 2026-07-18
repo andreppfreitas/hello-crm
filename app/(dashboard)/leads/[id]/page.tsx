@@ -12,9 +12,9 @@ import { getAutoTasks, getAutoTaskDef } from "@/lib/auto-tasks";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ChevronLeft, Phone, Mail, MapPin, Globe, BookOpen, DollarSign,
+  ChevronLeft, Phone, Mail, MapPin, Globe, BookOpen,
   User, Calendar, MessageSquare, FileText, CreditCard, CheckSquare,
-  Plus, Check, Clock, Trash2, ChevronRight, Bell, Sparkles,
+  Plus, Check, Clock, Trash2, ChevronRight, Bell, Sparkles, Flag, Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,16 @@ import { Link2 } from "lucide-react";
 const TABS = ["Overview", "Tasks", "Notes", "Timeline", "Payments", "Visa", "Documents"] as const;
 type Tab = typeof TABS[number];
 
+const VISA_PRESETS = [
+  "Student Visa 500",
+  "Visitor Visa 600",
+  "Working Holiday 417",
+  "Work and Holiday 462",
+  "Graduate Visa 485",
+  "Partner Visa",
+  "Bridging Visa",
+];
+
 export default function LeadProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { getLead, updateLead, removeLead } = useCRM();
@@ -46,6 +56,9 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
   const [showReminder, setShowReminder] = useState(false);
   const [showGroup, setShowGroup] = useState(false);
   const [showWaModal, setShowWaModal] = useState(false);
+  const [visaOtherMode, setVisaOtherMode] = useState(
+    !!(lead?.currentVisaType && !VISA_PRESETS.includes(lead.currentVisaType))
+  );
 
   if (!lead) return notFound();
 
@@ -197,8 +210,9 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
               <WhatsAppTemplateModal lead={lead} isOpen={showWaModal} onClose={() => setShowWaModal(false)} />
             </div>
             <EditableField icon={Mail} value={lead.email} placeholder="Email" onSave={(v) => updateLead(lead.id, { email: v })} type="email" />
-            <EditableField icon={MapPin} value={lead.currentLocation} placeholder="Localização atual" onSave={(v) => updateLead(lead.id, { currentLocation: v })} />
-            <EditableField icon={Globe} value={lead.country} placeholder="País de origem" onSave={(v) => updateLead(lead.id, { country: v })} />
+            <EditableField icon={MapPin} value={lead.currentCity} placeholder="Cidade atual" onSave={(v) => updateLead(lead.id, { currentCity: v || undefined })} />
+            <EditableField icon={Globe} value={lead.currentCountry} placeholder="País atual" onSave={(v) => updateLead(lead.id, { currentCountry: v || undefined })} />
+            <EditableField icon={Flag} value={lead.country} placeholder="País do passaporte" onSave={(v) => updateLead(lead.id, { country: v })} />
           </div>
 
           {/* Visa / offshore */}
@@ -229,12 +243,33 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
             </div>
             <div className="space-y-1.5">
               <label className="text-xs text-muted-foreground">Tipo de visto atual</label>
-              <input
-                defaultValue={lead.currentVisaType ?? ""}
-                onBlur={(e) => updateLead(lead.id, { currentVisaType: e.target.value || undefined })}
-                placeholder="Ex: Tourist 600, Working Holiday 417..."
-                className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
-              />
+              <select
+                value={visaOtherMode ? "Outro" : (lead.currentVisaType ?? "")}
+                onChange={(e) => {
+                  if (e.target.value === "Outro") {
+                    setVisaOtherMode(true);
+                    updateLead(lead.id, { currentVisaType: undefined });
+                  } else {
+                    setVisaOtherMode(false);
+                    updateLead(lead.id, { currentVisaType: e.target.value || undefined });
+                  }
+                }}
+                className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-1.5 text-foreground focus:outline-none focus:border-primary/50"
+              >
+                <option value="">— Selecionar —</option>
+                {VISA_PRESETS.map((v) => (
+                  <option key={v} value={v}>{v}</option>
+                ))}
+                <option value="Outro">Outro…</option>
+              </select>
+              {visaOtherMode && (
+                <input
+                  defaultValue={lead.currentVisaType ?? ""}
+                  onBlur={(e) => updateLead(lead.id, { currentVisaType: e.target.value || undefined })}
+                  placeholder="Descrever tipo de visto"
+                  className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-3 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+                />
+              )}
             </div>
             {STAGE_CONFIG[lead.stage]?.phase !== "visa" && (
             <div className="space-y-1.5">
@@ -257,19 +292,69 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
             )}
           </div>
 
-          {/* Course & budget */}
+          {/* Cursos & Escolas */}
           <div className="glass-card rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Interesse</h3>
-            <EditableSelect icon={BookOpen} value={lead.courseInterest} options={COURSES} onSave={(v) => updateLead(lead.id, { courseInterest: v })} />
-            <EditableSelect icon={MapPin} value={lead.preferredCity} options={CITIES} onSave={(v) => updateLead(lead.id, { preferredCity: v })} />
-            <EditableField icon={DollarSign} value={lead.budget} placeholder="Orçamento" onSave={(v) => updateLead(lead.id, { budget: v })} />
-          </div>
-
-          {/* Matrícula confirmada */}
-          <div className="glass-card rounded-xl p-4 space-y-3">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Matrícula Confirmada</h3>
-            <EditableField icon={BookOpen} value={lead.chosenCourse} placeholder="Curso escolhido" onSave={(v) => updateLead(lead.id, { chosenCourse: v || undefined })} />
-            <EditableField icon={MapPin} value={lead.chosenSchool} placeholder="Escola escolhida" onSave={(v) => updateLead(lead.id, { chosenSchool: v || undefined })} />
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cursos & Escolas</h3>
+              <button
+                onClick={() => {
+                  const next = [...(lead.enrollments ?? []), { id: `enr-${Date.now()}`, course: "", school: "", campus: "" }];
+                  updateLead(lead.id, { enrollments: next });
+                }}
+                className="flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                <Plus className="w-3 h-3" /> Adicionar
+              </button>
+            </div>
+            {(!lead.enrollments || lead.enrollments.length === 0) ? (
+              <p className="text-xs text-muted-foreground italic text-center py-2">Nenhuma opção registrada.</p>
+            ) : (
+              <div className="space-y-3">
+                {lead.enrollments.map((enr, idx) => (
+                  <div key={enr.id} className="space-y-2 p-3 rounded-lg bg-secondary/30 border border-border">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground font-medium">Opção {idx + 1}</span>
+                      <button
+                        onClick={() => updateLead(lead.id, { enrollments: lead.enrollments!.filter((e) => e.id !== enr.id) })}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <input
+                      key={enr.id + "-course"}
+                      defaultValue={enr.course}
+                      placeholder="Curso"
+                      onBlur={(e) => {
+                        const v = e.target.value;
+                        updateLead(lead.id, { enrollments: lead.enrollments!.map((e) => e.id === enr.id ? { ...e, course: v } : e) });
+                      }}
+                      className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+                    />
+                    <input
+                      key={enr.id + "-school"}
+                      defaultValue={enr.school}
+                      placeholder="Escola"
+                      onBlur={(e) => {
+                        const v = e.target.value;
+                        updateLead(lead.id, { enrollments: lead.enrollments!.map((e) => e.id === enr.id ? { ...e, school: v } : e) });
+                      }}
+                      className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+                    />
+                    <input
+                      key={enr.id + "-campus"}
+                      defaultValue={enr.campus ?? ""}
+                      placeholder="Campus / Cidade (opcional)"
+                      onBlur={(e) => {
+                        const v = e.target.value;
+                        updateLead(lead.id, { enrollments: lead.enrollments!.map((e) => e.id === enr.id ? { ...e, campus: v || undefined } : e) });
+                      }}
+                      className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* CRM info */}
@@ -442,18 +527,18 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                 <h3 className="text-sm font-semibold">Lead Summary</h3>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    ["Full Name", lead.fullName],
+                    ["Nome completo", lead.fullName],
                     ["Email", lead.email],
-                    ["Phone", lead.phone],
-                    ["Country", lead.country],
-                    ["Location", lead.currentLocation],
-                    ["Course", lead.courseInterest],
-                    ["City", lead.preferredCity],
-                    ["Budget", lead.budget],
+                    ["Telefone", lead.phone],
+                    ["Passaporte", lead.country],
+                    ["Cidade atual", lead.currentCity ?? lead.currentLocation],
+                    ["País atual", lead.currentCountry],
+                    ["Visto atual", lead.currentVisaType],
+                    ["Venc. visto", lead.visaExpiryDate ? formatDate(lead.visaExpiryDate) : undefined],
                     ["Source", lead.source],
-                    ["Consultant", lead.assignedConsultant],
-                    ["Added", formatDate(lead.createdAt)],
-                    ["Last Contact", lead.lastContactAt ? formatDate(lead.lastContactAt, "relative") : "Never"],
+                    ["Consultor", lead.assignedConsultant],
+                    ["Adicionado", formatDate(lead.createdAt)],
+                    ["Último contato", lead.lastContactAt ? formatDate(lead.lastContactAt, "relative") : "Nunca"],
                   ].map(([label, value]) => (
                     <div key={label} className="space-y-0.5">
                       <p className="text-xs text-muted-foreground">{label}</p>

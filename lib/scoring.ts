@@ -22,7 +22,7 @@ export function computeScore(lead: Lead): number {
   score += Math.min(lead.notesList.length * 2, 8);
 
   // Budget (0–16)
-  score += BUDGET_SCORES[lead.budget] ?? 5;
+  score += (lead.budget ? BUDGET_SCORES[lead.budget] : undefined) ?? 5;
 
   // Pipeline progress (0–14)
   const order = STAGE_CONFIG[lead.stage]?.order ?? 1;

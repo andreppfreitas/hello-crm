@@ -146,18 +146,27 @@ export interface StageChecklistItem {
   done: boolean;
 }
 
+export interface EnrollmentOption {
+  id: string;
+  course: string;
+  school: string;
+  campus?: string;
+}
+
 export interface Lead {
   id: string;
   // Personal
   fullName: string;
   phone: string;
   email: string;
-  country: string;
-  currentLocation: string;
-  // Course
-  courseInterest: CourseType | string;
-  preferredCity: string;
-  budget: string;
+  country: string;               // passport country
+  currentLocation?: string;      // legacy single field (kept for backward compat)
+  currentCity?: string;          // city where student is now
+  currentCountry?: string;       // country where student is now
+  // Course interest — kept optional for backward compat
+  courseInterest?: CourseType | string;
+  preferredCity?: string;
+  budget?: string;
   // CRM
   source: LeadSource | string;
   temperature: LeadTemperature;
@@ -180,9 +189,10 @@ export interface Lead {
   stageChanges: StageChangeEvent[];
   visaChecklist: VisaChecklistItem[];
   score?: number;
-  // Enrollment — escola e curso confirmados
-  chosenSchool?: string;
-  chosenCourse?: string;
+  // Enrollment — escola e cursos escolhidos
+  enrollments?: EnrollmentOption[];
+  chosenSchool?: string;   // legacy
+  chosenCourse?: string;   // legacy
   // Visa / offshore status
   currentVisaType?: string;
   visaExpiryDate?: string;      // ISO date string YYYY-MM-DD

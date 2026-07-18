@@ -1,7 +1,7 @@
 "use client";
 
 import { useCRM } from "@/contexts/CRMContext";
-import { CONSULTANTS, CITIES, COURSES, SOURCES, STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG } from "@/lib/constants";
+import { CONSULTANTS, SOURCES, STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -36,10 +36,8 @@ export default function NewLeadPage() {
     phone: "",
     email: "",
     country: "Brazil",
-    currentLocation: "",
-    courseInterest: "",
-    preferredCity: "",
-    budget: "",
+    currentCity: "",
+    currentCountry: "",
     source: "Instagram" as LeadSource,
     temperature: "warm" as LeadTemperature,
     stage: "new_lead" as PipelineStage,
@@ -72,44 +70,24 @@ export default function NewLeadPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        <Section title="Personal Information">
-          <Field label="Full Name *">
+        <Section title="Dados Pessoais">
+          <Field label="Nome completo *">
             <Input value={form.fullName} onChange={(e) => set("fullName", e.target.value)} placeholder="Ana Silva" className="bg-secondary/50" />
           </Field>
-          <Field label="Phone / WhatsApp">
+          <Field label="Telefone / WhatsApp">
             <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+55 11 99999-9999" className="bg-secondary/50" />
           </Field>
           <Field label="Email">
             <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="ana@email.com" className="bg-secondary/50" />
           </Field>
-          <Field label="Country of Origin">
+          <Field label="País do passaporte">
             <Input value={form.country} onChange={(e) => set("country", e.target.value)} placeholder="Brazil" className="bg-secondary/50" />
           </Field>
-          <Field label="Current Location" full>
-            <Input value={form.currentLocation} onChange={(e) => set("currentLocation", e.target.value)} placeholder="São Paulo, Brazil" className="bg-secondary/50" />
+          <Field label="Cidade atual">
+            <Input value={form.currentCity} onChange={(e) => set("currentCity", e.target.value)} placeholder="São Paulo" className="bg-secondary/50" />
           </Field>
-        </Section>
-
-        <Section title="Course & Destination">
-          <Field label="Course Interest">
-            <select value={form.courseInterest} onChange={(e) => set("courseInterest", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-              <option value="">Select course...</option>
-              {COURSES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </Field>
-          <Field label="Preferred City">
-            <select value={form.preferredCity} onChange={(e) => set("preferredCity", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-              <option value="">Select city...</option>
-              {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </Field>
-          <Field label="Budget" full>
-            <select value={form.budget} onChange={(e) => set("budget", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-              <option value="">Select budget range...</option>
-              {["Under AUD 5,000", "AUD 5,000–10,000", "AUD 10,000–20,000", "AUD 20,000–40,000", "Over AUD 40,000"].map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
+          <Field label="País atual">
+            <Input value={form.currentCountry} onChange={(e) => set("currentCountry", e.target.value)} placeholder="Brasil" className="bg-secondary/50" />
           </Field>
         </Section>
 

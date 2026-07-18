@@ -174,7 +174,7 @@ export default function ReportsPage() {
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <ResponsiveContainer width="100%" height={280}>
             <FunnelChart>
-              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`${v} leads`, ""]} />
+              <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v) => [`${v} leads`, ""]} />
               <Funnel dataKey="value" data={funnelData} isAnimationActive>
                 {funnelData.map((entry, i) => (
                   <Cell key={i} fill={entry.fill} />

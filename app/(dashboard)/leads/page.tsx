@@ -274,7 +274,7 @@ function LeadsInner() {
     if (filterStage) list = list.filter((l) => l.stage === filterStage);
     if (filterConsultant) list = list.filter((l) => l.assignedConsultant === filterConsultant);
     if (filterCity) list = list.filter((l) => l.preferredCity === filterCity);
-    if (filterCourse) list = list.filter((l) => l.courseInterest.includes(filterCourse));
+    if (filterCourse) list = list.filter((l) => l.courseInterest?.includes(filterCourse));
     if (filterNextAction) list = list.filter((l) => l.nextAction === filterNextAction);
     list.sort((a, b) => {
       if (sortField === "score") return sortDir === "asc" ? (a.score ?? 0) - (b.score ?? 0) : (b.score ?? 0) - (a.score ?? 0);
