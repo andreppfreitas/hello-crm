@@ -23,20 +23,20 @@ export const STAGE_CONFIG: Record<
   final_quote_sent:          { label: "Final Quote Sent",                      phase: "enrollment", color: "text-rose-300",     bg: "bg-rose-500/20 border-rose-500/30",      dot: "bg-rose-400",     order: 12 },
   contract_sent:             { label: "Offer Letter + Hello Contract Sent",    phase: "enrollment", color: "text-red-300",      bg: "bg-red-500/20 border-red-500/30",        dot: "bg-red-400",      order: 13 },
   read_carefully_email:      { label: '"Read Carefully" Email Sent',           phase: "enrollment", color: "text-sky-300",      bg: "bg-sky-500/20 border-sky-500/30",        dot: "bg-sky-400",      order: 14 },
-  // Documents
-  documents_signed:          { label: "Student Signed Documents",              phase: "documents",  color: "text-teal-300",     bg: "bg-teal-500/20 border-teal-500/30",      dot: "bg-teal-400",     order: 15 },
-  visa_checklist_sent:       { label: "Visa Checklist Sent",                   phase: "documents",  color: "text-emerald-300",  bg: "bg-emerald-500/20 border-emerald-500/30",dot: "bg-emerald-400",  order: 16 },
-  student_uploading_docs:    { label: "Student Uploading Documents",           phase: "documents",  color: "text-green-300",    bg: "bg-green-500/20 border-green-500/30",    dot: "bg-green-400",    order: 17 },
-  gs_letter_draft_sent:      { label: "GS Letter Draft Sent",                  phase: "documents",  color: "text-lime-300",     bg: "bg-lime-500/20 border-lime-500/30",      dot: "bg-lime-400",     order: 18 },
-  gs_letter_approved:        { label: "GS Letter Approved",                    phase: "documents",  color: "text-yellow-300",   bg: "bg-yellow-500/20 border-yellow-500/30",  dot: "bg-yellow-400",   order: 19 },
-  documents_complete:        { label: "Documents Complete",                    phase: "documents",  color: "text-amber-300",    bg: "bg-amber-500/20 border-amber-500/30",    dot: "bg-amber-400",    order: 20 },
   // Payments
-  coe_deposit_paid:          { label: "CoE Deposit Paid",                      phase: "payments",   color: "text-orange-300",   bg: "bg-orange-500/20 border-orange-500/30",  dot: "bg-orange-400",   order: 21 },
-  coe_issued:                { label: "CoE Issued",                            phase: "payments",   color: "text-yellow-300",   bg: "bg-yellow-500/20 border-yellow-500/30",  dot: "bg-yellow-400",   order: 22 },
-  coe_confirmed:             { label: "CoE Confirmed by Student",              phase: "payments",   color: "text-lime-300",     bg: "bg-lime-500/20 border-lime-500/30",      dot: "bg-lime-400",     order: 23 },
-  oshc_payment:              { label: "OSHC Payment Collected",                phase: "payments",   color: "text-teal-300",     bg: "bg-teal-500/20 border-teal-500/30",      dot: "bg-teal-400",     order: 24 },
-  oshc_issued:               { label: "OSHC Issued",                           phase: "payments",   color: "text-cyan-300",     bg: "bg-cyan-500/20 border-cyan-500/30",      dot: "bg-cyan-400",     order: 25 },
-  visa_fee_paid:             { label: "Visa Fee Paid",                         phase: "payments",   color: "text-green-300",    bg: "bg-green-500/20 border-green-500/30",    dot: "bg-green-400",    order: 26 },
+  coe_deposit_paid:          { label: "CoE Deposit Paid",                      phase: "payments",   color: "text-orange-300",   bg: "bg-orange-500/20 border-orange-500/30",  dot: "bg-orange-400",   order: 15 },
+  coe_issued:                { label: "CoE Issued",                            phase: "payments",   color: "text-yellow-300",   bg: "bg-yellow-500/20 border-yellow-500/30",  dot: "bg-yellow-400",   order: 16 },
+  coe_confirmed:             { label: "CoE Confirmed by Student",              phase: "payments",   color: "text-lime-300",     bg: "bg-lime-500/20 border-lime-500/30",      dot: "bg-lime-400",     order: 17 },
+  oshc_payment:              { label: "OSHC Payment Collected",                phase: "payments",   color: "text-teal-300",     bg: "bg-teal-500/20 border-teal-500/30",      dot: "bg-teal-400",     order: 18 },
+  oshc_issued:               { label: "OSHC Issued",                           phase: "payments",   color: "text-cyan-300",     bg: "bg-cyan-500/20 border-cyan-500/30",      dot: "bg-cyan-400",     order: 19 },
+  visa_fee_paid:             { label: "Visa Fee Paid",                         phase: "payments",   color: "text-green-300",    bg: "bg-green-500/20 border-green-500/30",    dot: "bg-green-400",    order: 20 },
+  // Documents
+  documents_signed:          { label: "Student Signed Documents",              phase: "documents",  color: "text-teal-300",     bg: "bg-teal-500/20 border-teal-500/30",      dot: "bg-teal-400",     order: 21 },
+  visa_checklist_sent:       { label: "Visa Checklist Sent",                   phase: "documents",  color: "text-emerald-300",  bg: "bg-emerald-500/20 border-emerald-500/30",dot: "bg-emerald-400",  order: 22 },
+  student_uploading_docs:    { label: "Student Uploading Documents",           phase: "documents",  color: "text-green-300",    bg: "bg-green-500/20 border-green-500/30",    dot: "bg-green-400",    order: 23 },
+  gs_letter_draft_sent:      { label: "GS Letter Draft Sent",                  phase: "documents",  color: "text-lime-300",     bg: "bg-lime-500/20 border-lime-500/30",      dot: "bg-lime-400",     order: 24 },
+  gs_letter_approved:        { label: "GS Letter Approved",                    phase: "documents",  color: "text-yellow-300",   bg: "bg-yellow-500/20 border-yellow-500/30",  dot: "bg-yellow-400",   order: 25 },
+  documents_complete:        { label: "Documents Complete",                    phase: "documents",  color: "text-amber-300",    bg: "bg-amber-500/20 border-amber-500/30",    dot: "bg-amber-400",    order: 26 },
   // Visa
   visa_lodged:               { label: "Visa Application Lodged",               phase: "visa",       color: "text-blue-300",     bg: "bg-blue-500/20 border-blue-500/30",      dot: "bg-blue-400",     order: 27 },
   medical_requested:         { label: "Medical Examination Requested",         phase: "visa",       color: "text-indigo-300",   bg: "bg-indigo-500/20 border-indigo-500/30",  dot: "bg-indigo-400",   order: 28 },
@@ -56,7 +56,7 @@ export const PHASE_CONFIG: Record<
   visa:       { label: "Visa",        color: "text-emerald-300",  headerBg: "bg-emerald-500/10 border-emerald-500/20",stages: ["visa_lodged", "medical_requested", "visa_granted"] },
 };
 
-export const PHASE_ORDER: PhaseGroup[] = ["leads", "qualifying", "proposal", "enrollment", "documents", "payments", "visa"];
+export const PHASE_ORDER: PhaseGroup[] = ["leads", "qualifying", "proposal", "enrollment", "payments", "documents", "visa"];
 
 export const ALL_STAGES: PipelineStage[] = Object.keys(STAGE_CONFIG) as PipelineStage[];
 
