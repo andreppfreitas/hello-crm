@@ -261,6 +261,21 @@ function LeadsInner() {
 
   const scored = useMemo(() => leads.map((l) => ({ ...l, score: computeScore(l) })), [leads]);
 
+  // Cidades únicas extraídas dos leads (currentLocation + preferredCity)
+  const cityOptions = useMemo(() => {
+    const AU_CITIES = ["Sydney", "Melbourne", "Brisbane", "Gold Coast", "Adelaide", "Canberra", "Perth"];
+    const set = new Set<string>();
+    for (const l of leads) {
+      const loc = l.currentLocation?.trim();
+      if (loc) {
+        const match = AU_CITIES.find((c) => loc.toLowerCase().includes(c.toLowerCase()));
+        if (match) set.add(match); else set.add(loc);
+      }
+      if (l.preferredCity?.trim()) set.add(l.preferredCity.trim());
+    }
+    return Array.from(set).sort();
+  }, [leads]);
+
   const deduped = useMemo(() => {
     return scored.filter((l) => {
       if (!l.groupId) return true;
@@ -278,7 +293,7 @@ function LeadsInner() {
     if (filterTemp) list = list.filter((l) => l.temperature === filterTemp);
     if (filterStage) list = list.filter((l) => l.stage === filterStage);
     if (filterConsultant) list = list.filter((l) => l.assignedConsultant === filterConsultant);
-    if (filterCity) list = list.filter((l) => l.preferredCity === filterCity);
+    if (filterCity) list = list.filter((l) => l.currentLocation?.toLowerCase().includes(filterCity.toLowerCase()) || l.preferredCity?.toLowerCase() === filterCity.toLowerCase());
     if (filterCourse) list = list.filter((l) => l.courseInterest?.includes(filterCourse));
     if (filterNextAction) list = list.filter((l) => l.nextAction === filterNextAction);
     list.sort((a, b) => {
@@ -399,8 +414,8 @@ function LeadsInner() {
                 {CONSULTANTS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
               <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
-                <option value="">{t("city")}</option>
-                {CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                <option value="">Cidade atual</option>
+                {cityOptions.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
               <select value={filterCourse} onChange={(e) => setFilterCourse(e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
                 <option value="">{t("course")}</option>
