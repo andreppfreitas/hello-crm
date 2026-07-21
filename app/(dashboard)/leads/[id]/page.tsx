@@ -44,7 +44,7 @@ const VISA_PRESETS = [
 
 export default function LeadProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { getLead, updateLead, removeLead } = useCRM();
+  const { getLead, updateLead, removeLead, addReminder } = useCRM();
   const router = useRouter();
   const lead = getLead(id);
 
@@ -114,16 +114,28 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
 
   function handleAddNote() {
     if (!newNote.trim() || !lead) return;
+    const now = new Date().toISOString();
     const note: Note = {
       id: `note-${Date.now()}`,
       content: newNote.trim(),
       authorName: CONSULTANTS[0],
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       type: noteType,
     };
     updateLead(lead.id, { notesList: [note, ...lead.notesList] });
+    // Auto-create reminder from note
+    const dueAt = new Date();
+    dueAt.setDate(dueAt.getDate() + 1);
+    addReminder({
+      leadId: lead.id,
+      leadName: lead.fullName,
+      type: noteType === "call" ? "call" : noteType === "email" ? "email" : noteType === "whatsapp" ? "whatsapp" : "other",
+      note: note.content,
+      dueAt: dueAt.toISOString(),
+      authorName: CONSULTANTS[0],
+    });
     setNewNote("");
-    toast.success("Note added");
+    toast.success("Note adicionada + lembrete criado para amanhã");
   }
 
   function handleDelete() {
