@@ -540,7 +540,16 @@ function LeadsInner() {
                     </div>
                   </td>
                   <td className="px-3 py-3">
-                    {lead.visaExpiryDate ? (() => {
+                    {STAGE_CONFIG[lead.stage]?.phase === "visa" ? (
+                      <span className={cn(
+                        "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+                        lead.stage === "visa_granted"
+                          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+                          : "bg-blue-500/15 text-blue-400 border-blue-500/30"
+                      )}>
+                        {lead.stage === "visa_granted" ? "✅ Aprovado" : "🛂 Aplicado"}
+                      </span>
+                    ) : lead.visaExpiryDate ? (() => {
                       const days = Math.ceil((new Date(lead.visaExpiryDate).getTime() - Date.now()) / 86400000);
                       return (
                         <div className="flex flex-col gap-0.5">
