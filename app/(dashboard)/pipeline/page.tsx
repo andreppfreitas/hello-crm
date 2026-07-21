@@ -129,7 +129,9 @@ function DraggableCard({ lead, isDragging, groupPartnerName, onAdvance, onWhatsA
       </div>
 
       <div className="flex items-center gap-1.5">
-        <p className="text-xs text-muted-foreground truncate flex-1">{lead.courseInterest}</p>
+        <p className="text-xs text-muted-foreground truncate flex-1">
+          {lead.enrollments?.find((e) => e.course?.trim())?.course ?? lead.courseInterest}
+        </p>
         {isInVisaProcess && (
           <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20 flex-shrink-0">
             🛂 Em Visto

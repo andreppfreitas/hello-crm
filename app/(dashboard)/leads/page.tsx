@@ -29,6 +29,11 @@ export default function LeadsPage() {
   );
 }
 
+// Opções de Cursos & Escolas preenchidas no lead (fallback: courseInterest legado)
+function leadEnrollments(lead: Lead) {
+  return (lead.enrollments ?? []).filter((e) => e.course?.trim() || e.school?.trim());
+}
+
 // ── Inline editable cell components ────────────────────────────────────────
 
 function EditableTemp({ lead, onSave }: { lead: Lead; onSave: (v: LeadTemperature) => void }) {
@@ -451,7 +456,17 @@ function LeadsInner() {
               </div>
 
               <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
-                <span className="truncate max-w-[140px]">{lead.courseInterest || "—"}</span>
+                {(() => {
+                  const enrs = leadEnrollments(lead);
+                  if (enrs.length === 0) return <span className="truncate max-w-[140px]">{lead.courseInterest || "—"}</span>;
+                  const first = enrs[0];
+                  return (
+                    <span className="truncate max-w-[180px]">
+                      {first.course || "—"}{first.school ? ` · ${first.school}` : ""}
+                      {enrs.length > 1 && <span className="text-muted-foreground/60"> +{enrs.length - 1}</span>}
+                    </span>
+                  );
+                })()}
                 <span>·</span>
                 <StageBadge stage={lead.stage} />
               </div>
@@ -607,7 +622,22 @@ function LeadsInner() {
                       <span className="text-xs text-muted-foreground/40">—</span>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-xs text-muted-foreground max-w-[120px] truncate">{lead.courseInterest}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground max-w-[180px]">
+                    {(() => {
+                      const enrs = leadEnrollments(lead);
+                      if (enrs.length === 0) return <span className="block truncate">{lead.courseInterest || "—"}</span>;
+                      return (
+                        <div className="space-y-0.5">
+                          {enrs.map((e) => (
+                            <div key={e.id} className="truncate">
+                              <span className="text-foreground/80">{e.course || "—"}</span>
+                              {e.school && <span className="text-muted-foreground/70"> · {e.school}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground">{formatDate(lead.createdAt)}</td>
                   <td className="px-3 py-3">
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

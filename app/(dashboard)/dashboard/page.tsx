@@ -49,16 +49,35 @@ export default function DashboardPage() {
     visa: leads.filter((l) => l.assignedConsultant === name && STAGE_CONFIG[l.stage]?.phase === "visa").length,
   })).filter((d) => d.leads > 0);
 
-  const courseCounts = leads.reduce<Record<string, number>>((acc, l) => {
-    const c = l.chosenCourse?.trim();
-    if (!c) return acc;
-    acc[c] = (acc[c] ?? 0) + 1;
-    return acc;
-  }, {});
-  const courseData = Object.entries(courseCounts)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value)
-    .slice(0, 8);
+  // Conta alunos por curso/escola a partir dos enrollments (com fallback nos campos legados).
+  // Agrupa case-insensitive e conta cada lead no máximo 1x por curso/escola.
+  const countStudentsBy = (getValues: (l: (typeof leads)[number]) => (string | undefined)[]) => {
+    const counts: Record<string, { name: string; value: number }> = {};
+    for (const l of leads) {
+      const unique = new Set(
+        getValues(l)
+          .map((v) => v?.trim())
+          .filter((v): v is string => !!v)
+          .map((v) => v.toLowerCase())
+      );
+      for (const key of unique) {
+        if (!counts[key]) {
+          const original = getValues(l).find((v) => v?.trim().toLowerCase() === key)!.trim();
+          counts[key] = { name: original, value: 0 };
+        }
+        counts[key].value += 1;
+      }
+    }
+    return Object.values(counts).sort((a, b) => b.value - a.value);
+  };
+
+  const courseData = countStudentsBy((l) =>
+    l.enrollments?.length ? l.enrollments.map((e) => e.course) : [l.chosenCourse]
+  ).slice(0, 8);
+
+  const schoolData = countStudentsBy((l) =>
+    l.enrollments?.length ? l.enrollments.map((e) => e.school) : [l.chosenSchool]
+  ).slice(0, 10);
 
   const hotLeads = leads.filter((l) => l.temperature === "hot").slice(0, 5);
 
@@ -251,19 +270,40 @@ export default function DashboardPage() {
 
         {/* Course distribution */}
         <div className="glass-card rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4">Cursos Confirmados</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={courseData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} paddingAngle={3}>
-                {courseData.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={{ background: "#1e2a3a", border: "1px solid #334155", borderRadius: 8 }} />
-              <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-            </PieChart>
-          </ResponsiveContainer>
+          <h3 className="text-sm font-semibold text-foreground mb-4">Alunos por Curso</h3>
+          {courseData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum curso registrado nos alunos ainda.</p>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={courseData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} paddingAngle={3}>
+                  {courseData.map((_, i) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: "#1e2a3a", border: "1px solid #334155", borderRadius: 8 }} />
+                <Legend iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </div>
+      </div>
+
+      {/* Students by school */}
+      <div className="glass-card rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-4">Alunos por Escola</h3>
+        {schoolData.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma escola registrada nos alunos ainda.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={Math.max(160, schoolData.length * 40)}>
+            <BarChart data={schoolData} layout="vertical" barCategoryGap="25%">
+              <XAxis type="number" allowDecimals={false} tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="name" width={180} tick={{ fill: "#94a3b8", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <Tooltip contentStyle={{ background: "#1e2a3a", border: "1px solid #334155", borderRadius: 8 }} />
+              <Bar dataKey="value" fill="#8b5cf6" radius={[0, 4, 4, 0]} name="Alunos" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Bottom row */}
@@ -296,7 +336,9 @@ export default function DashboardPage() {
                     </div>
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{lead.fullName}</p>
-                      <p className="text-xs text-muted-foreground truncate">{lead.courseInterest}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {lead.enrollments?.find((e) => e.course?.trim())?.course ?? lead.courseInterest}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
