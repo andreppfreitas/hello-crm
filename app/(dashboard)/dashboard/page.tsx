@@ -27,14 +27,14 @@ export default function DashboardPage() {
   const cityData = [
     ...AU_CITIES.map((city) => ({
       city,
-      count: leads.filter((l) => l.currentLocation?.toLowerCase().includes(city.toLowerCase())).length,
+      count: leads.filter((l) => l.currentCity?.toLowerCase().includes(city.toLowerCase())).length,
     })),
     {
       city: "Outros",
       count: leads.filter((l) => {
         if (l.isOffshore) return false;
-        const loc = l.currentLocation?.toLowerCase() ?? "";
-        return !AU_CITIES.some((c) => loc.includes(c.toLowerCase()));
+        const city = l.currentCity?.toLowerCase() ?? "";
+        return city && !AU_CITIES.some((c) => city.includes(c.toLowerCase()));
       }).length,
     },
     {
