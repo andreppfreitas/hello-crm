@@ -520,6 +520,7 @@ function LeadsInner() {
                 <SortTh field="temperature" label="Temp" />
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("stage")}</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Next Action</th>
+                <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Location</th>
                 <th className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("course")}</th>
                 <SortTh field="createdAt" label={t("created")} />
                 <th className="px-3 py-3 w-16" />
@@ -624,6 +625,9 @@ function LeadsInner() {
                     ) : (
                       <span className="text-xs text-muted-foreground/40">—</span>
                     )}
+                  </td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground max-w-[140px]">
+                    <span className="truncate block">{lead.currentLocation || "—"}</span>
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground max-w-[180px]">
                     {(() => {
