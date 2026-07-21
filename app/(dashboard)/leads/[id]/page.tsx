@@ -552,7 +552,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                     ["Email", lead.email],
                     ["Telefone", lead.phone],
                     ["Passaporte", lead.country],
-                    ["Cidade atual", lead.currentCity ?? lead.currentLocation],
+                    ["Cidade atual", lead.currentCity],
                     ["País atual", lead.currentCountry],
                     ["Visto atual", lead.currentVisaType],
                     ["Venc. visto", lead.visaExpiryDate ? formatDate(lead.visaExpiryDate) : undefined],

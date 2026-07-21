@@ -281,7 +281,7 @@ function LeadsInner() {
     if (filterTemp) list = list.filter((l) => l.temperature === filterTemp);
     if (filterStage) list = list.filter((l) => l.stage === filterStage);
     if (filterConsultant) list = list.filter((l) => l.assignedConsultant === filterConsultant);
-    if (filterCity) list = list.filter((l) => l.currentLocation?.toLowerCase().includes(filterCity.toLowerCase()) || l.preferredCity?.toLowerCase() === filterCity.toLowerCase());
+    if (filterCity) list = list.filter((l) => l.currentCity?.toLowerCase().includes(filterCity.toLowerCase()));
     if (filterCourse) list = list.filter((l) => l.courseInterest?.includes(filterCourse));
     if (filterNextAction) list = list.filter((l) => l.nextAction === filterNextAction);
     list.sort((a, b) => {
@@ -627,7 +627,7 @@ function LeadsInner() {
                     )}
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground max-w-[140px]">
-                    <span className="truncate block">{lead.currentLocation || "—"}</span>
+                    <span className="truncate block">{lead.currentCity || "—"}</span>
                   </td>
                   <td className="px-3 py-3 text-xs text-muted-foreground max-w-[180px]">
                     {(() => {
