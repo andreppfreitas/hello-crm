@@ -10,6 +10,8 @@ const BUDGET_SCORES: Record<string, number> = {
 };
 
 export function computeScore(lead: Lead): number {
+  if (STAGE_CONFIG[lead.stage]?.phase === "visa") return 100;
+
   let score = 0;
 
   // Temperature (0–35)

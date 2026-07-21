@@ -170,7 +170,10 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
           </div>
         </div>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <TemperatureBadge temp={lead.temperature} />
+          {STAGE_CONFIG[lead.stage]?.phase === "visa"
+            ? <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">✅ Fechado</span>
+            : <TemperatureBadge temp={lead.temperature} />
+          }
           <StageBadge stage={lead.stage} />
           <WhatsAppButton lead={lead} />
           <Button variant="outline" size="sm" onClick={() => setShowTemplates(true)} className="gap-1.5 h-8">
@@ -408,24 +411,30 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
           {/* Temperature control */}
           <div className="glass-card rounded-xl p-4 space-y-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Temperature</h3>
-            <div className="flex gap-2">
-              {(["hot", "warm", "cold"] as LeadTemperature[]).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => handleTemperatureChange(t)}
-                  className={cn(
-                    "flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors",
-                    lead.temperature === t
-                      ? t === "hot" ? "bg-red-500/20 border-red-500/50 text-red-300"
-                        : t === "warm" ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
-                        : "bg-blue-500/20 border-blue-500/50 text-blue-300"
-                      : "bg-secondary/30 border-border text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {t === "hot" ? "🔥" : t === "warm" ? "☀️" : "❄️"} {t}
-                </button>
-              ))}
-            </div>
+            {STAGE_CONFIG[lead.stage]?.phase === "visa" ? (
+              <div className="flex items-center gap-2 py-1.5 px-3 rounded-lg bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 text-xs font-medium">
+                <span>✅</span> Fechado — Aluno em processo de visto
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                {(["hot", "warm", "cold"] as LeadTemperature[]).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => handleTemperatureChange(t)}
+                    className={cn(
+                      "flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                      lead.temperature === t
+                        ? t === "hot" ? "bg-red-500/20 border-red-500/50 text-red-300"
+                          : t === "warm" ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
+                          : "bg-blue-500/20 border-blue-500/50 text-blue-300"
+                        : "bg-secondary/30 border-border text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {t === "hot" ? "🔥" : t === "warm" ? "☀️" : "❄️"} {t}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Stage selector */}
