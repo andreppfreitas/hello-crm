@@ -1,4 +1,4 @@
-export type LeadTemperature = "hot" | "warm" | "cold";
+export type LeadTemperature = "hot" | "warm" | "cold" | "closed";
 
 export type PipelineStage =
   // Leads

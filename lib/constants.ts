@@ -169,9 +169,10 @@ Object.assign(STAGE_CONFIG as Record<string, unknown>, {
 });
 
 export const TEMPERATURE_CONFIG = {
-  hot:  { label: "Hot",  color: "text-red-300",    bg: "bg-red-500/20 border-red-500/30",       dot: "bg-red-400",    icon: "🔥" },
-  warm: { label: "Warm", color: "text-orange-300", bg: "bg-orange-500/20 border-orange-500/30", dot: "bg-orange-400", icon: "☀️" },
-  cold: { label: "Cold", color: "text-blue-300",   bg: "bg-blue-500/20 border-blue-500/30",     dot: "bg-blue-400",   icon: "❄️" },
+  hot:    { label: "Hot",     color: "text-red-300",     bg: "bg-red-500/20 border-red-500/30",       dot: "bg-red-400",     icon: "🔥" },
+  warm:   { label: "Warm",    color: "text-orange-300",  bg: "bg-orange-500/20 border-orange-500/30", dot: "bg-orange-400",  icon: "☀️" },
+  cold:   { label: "Cold",    color: "text-blue-300",    bg: "bg-blue-500/20 border-blue-500/30",     dot: "bg-blue-400",    icon: "❄️" },
+  closed: { label: "Fechado", color: "text-emerald-300", bg: "bg-emerald-500/20 border-emerald-500/30", dot: "bg-emerald-400", icon: "✅" },
 };
 
 export const TASK_TEMPLATES: Record<PipelineStage, string[]> = {

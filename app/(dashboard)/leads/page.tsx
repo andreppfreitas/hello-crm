@@ -38,8 +38,8 @@ function leadEnrollments(lead: Lead) {
 
 function EditableTemp({ lead, onSave }: { lead: Lead; onSave: (v: LeadTemperature) => void }) {
   const [open, setOpen] = useState(false);
-  const opts: LeadTemperature[] = ["hot", "warm", "cold"];
-  const icons = { hot: "🔥", warm: "☀️", cold: "❄️" };
+  const opts: LeadTemperature[] = ["hot", "warm", "cold", "closed"];
+  const icons: Record<LeadTemperature, string> = { hot: "🔥", warm: "☀️", cold: "❄️", closed: "✅" };
   return (
     <div className="relative">
       <button onClick={() => setOpen((v) => !v)}>
@@ -388,6 +388,7 @@ function LeadsInner() {
                 <option value="hot">🔥 {t("hot")}</option>
                 <option value="warm">☀️ {t("warm")}</option>
                 <option value="cold">❄️ {t("cold")}</option>
+                <option value="closed">✅ Fechado</option>
               </select>
               <select value={filterStage} onChange={(e) => setFilterStage(e.target.value as PipelineStage | "")} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
                 <option value="">Todos os estágios</option>

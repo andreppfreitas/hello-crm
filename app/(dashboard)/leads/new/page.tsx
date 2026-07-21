@@ -1,7 +1,7 @@
 "use client";
 
 import { useCRM } from "@/contexts/CRMContext";
-import { CONSULTANTS, SOURCES, STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG } from "@/lib/constants";
+import { CONSULTANTS, SOURCES, STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG, TEMPERATURE_CONFIG } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -99,23 +99,22 @@ export default function NewLeadPage() {
           </Field>
           <Field label="Temperature">
             <div className="flex gap-2">
-              {(["hot", "warm", "cold"] as LeadTemperature[]).map((t) => (
+              {(["hot", "warm", "cold", "closed"] as LeadTemperature[]).map((t) => {
+                const cfg = TEMPERATURE_CONFIG[t];
+                return (
                 <button
                   key={t}
                   type="button"
                   onClick={() => set("temperature", t)}
                   className={cn(
-                    "flex-1 py-2 rounded-lg text-sm font-medium border transition-colors capitalize",
-                    form.temperature === t
-                      ? t === "hot" ? "bg-red-500/20 border-red-500/50 text-red-300"
-                        : t === "warm" ? "bg-orange-500/20 border-orange-500/50 text-orange-300"
-                        : "bg-blue-500/20 border-blue-500/50 text-blue-300"
-                      : "bg-secondary/50 border-border text-muted-foreground"
+                    "flex-1 py-2 rounded-lg text-sm font-medium border transition-colors",
+                    form.temperature === t ? `${cfg.bg} ${cfg.color}` : "bg-secondary/50 border-border text-muted-foreground"
                   )}
                 >
-                  {t === "hot" ? "🔥" : t === "warm" ? "☀️" : "❄️"} {t}
+                  {cfg.icon} {cfg.label}
                 </button>
-              ))}
+                };
+              })}
             </div>
           </Field>
           <Field label="Pipeline Stage">
