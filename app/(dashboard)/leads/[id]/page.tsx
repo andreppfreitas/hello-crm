@@ -747,10 +747,18 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                 <div className="space-y-3">
                   {lead.notesList.length === 0 && <p className="text-sm text-muted-foreground">No notes yet.</p>}
                   {lead.notesList.map((note) => (
-                    <div key={note.id} className="p-3 rounded-lg bg-secondary/30 border border-border space-y-1.5">
+                    <div key={note.id} className="p-3 rounded-lg bg-secondary/30 border border-border space-y-1.5 group">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span className="capitalize font-medium text-foreground">{note.type}</span>
-                        <span>{note.authorName} · {formatDate(note.createdAt, "relative")}</span>
+                        <div className="flex items-center gap-2">
+                          <span>{note.authorName} · {formatDate(note.createdAt, "relative")}</span>
+                          <button
+                            onClick={() => { if (confirm("Apagar esta note?")) updateLead(lead.id, { notesList: lead.notesList.filter((n) => n.id !== note.id) }); }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-sm text-foreground">{note.content}</p>
                     </div>
