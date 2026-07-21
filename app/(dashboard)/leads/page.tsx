@@ -261,20 +261,8 @@ function LeadsInner() {
 
   const scored = useMemo(() => leads.map((l) => ({ ...l, score: computeScore(l) })), [leads]);
 
-  // Cidades únicas extraídas dos leads (currentLocation + preferredCity)
-  const cityOptions = useMemo(() => {
-    const AU_CITIES = ["Sydney", "Melbourne", "Brisbane", "Gold Coast", "Adelaide", "Canberra", "Perth"];
-    const set = new Set<string>();
-    for (const l of leads) {
-      const loc = l.currentLocation?.trim();
-      if (loc) {
-        const match = AU_CITIES.find((c) => loc.toLowerCase().includes(c.toLowerCase()));
-        if (match) set.add(match); else set.add(loc);
-      }
-      if (l.preferredCity?.trim()) set.add(l.preferredCity.trim());
-    }
-    return Array.from(set).sort();
-  }, [leads]);
+  const AU_CITIES_FILTER = ["Sydney", "Melbourne", "Brisbane", "Gold Coast", "Adelaide", "Canberra", "Perth"];
+  const cityOptions = AU_CITIES_FILTER;
 
   const deduped = useMemo(() => {
     return scored.filter((l) => {
