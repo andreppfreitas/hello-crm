@@ -271,7 +271,16 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                 />
               )}
             </div>
-            {STAGE_CONFIG[lead.stage]?.phase !== "visa" && (
+            {STAGE_CONFIG[lead.stage]?.phase === "visa" ? (
+              <div className={cn(
+                "flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold",
+                lead.stage === "visa_granted"
+                  ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                  : "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+              )}>
+                {lead.stage === "visa_granted" ? "✅ Visto aprovado!" : lead.stage === "medical_requested" ? "🏥 Exame médico solicitado" : "🛂 Visto lodged — aguardando decisão"}
+              </div>
+            ) : (
             <div className="space-y-1.5">
               <label className="text-xs text-muted-foreground">Vencimento do visto atual</label>
               <input
