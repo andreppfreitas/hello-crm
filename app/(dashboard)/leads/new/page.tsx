@@ -113,7 +113,7 @@ export default function NewLeadPage() {
                 >
                   {cfg.icon} {cfg.label}
                 </button>
-                };
+                );
               })}
             </div>
           </Field>
