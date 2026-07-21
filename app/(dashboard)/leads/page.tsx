@@ -458,7 +458,7 @@ function LeadsInner() {
               <div className="flex items-center gap-2 flex-wrap text-xs text-muted-foreground">
                 {(() => {
                   const enrs = leadEnrollments(lead);
-                  if (enrs.length === 0) return <span className="truncate max-w-[140px]">{lead.courseInterest || "—"}</span>;
+                  if (enrs.length === 0) return <span className="truncate max-w-[140px] text-muted-foreground/40">—</span>;
                   const first = enrs[0];
                   return (
                     <span className="truncate max-w-[180px]">
@@ -625,7 +625,7 @@ function LeadsInner() {
                   <td className="px-3 py-3 text-xs text-muted-foreground max-w-[180px]">
                     {(() => {
                       const enrs = leadEnrollments(lead);
-                      if (enrs.length === 0) return <span className="block truncate">{lead.courseInterest || "—"}</span>;
+                      if (enrs.length === 0) return <span className="block truncate text-muted-foreground/40">—</span>;
                       return (
                         <div className="space-y-0.5">
                           {enrs.map((e) => (
