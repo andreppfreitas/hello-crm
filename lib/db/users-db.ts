@@ -1,5 +1,6 @@
 import { redis } from "./redis";
 import crypto from "crypto";
+import { hashPasswordSecure, verifyPassword } from "@/lib/security/crypto";
 
 export type OfficeCity = "Sydney" | "Melbourne" | "Brisbane" | "Gold Coast" | "Perth" | "Adelaide";
 
@@ -11,17 +12,19 @@ export interface DBUser {
   role: "admin" | "consultant";
   office?: OfficeCity;
   createdAt: string;
+  passwordChangedAt?: string; // ausente = senha criada no cadastro inicial
 }
 
-function hashPassword(password: string): string {
+// Hash legado (sha256 + salt fixo) — usado só para os usuários seed; novas senhas usam scrypt
+function legacyHash(password: string): string {
   return crypto.createHash("sha256").update(password + "hello_crm_salt_2025").digest("hex");
 }
 
-export function checkPassword(plain: string, hash: string): boolean {
-  return hashPassword(plain) === hash;
-}
+/** Novas senhas: scrypt com salt por usuário. */
+export const hashPassword = hashPasswordSecure;
 
-export { hashPassword };
+/** Verifica em ambos os formatos (scrypt + legado). */
+export const checkPassword = verifyPassword;
 
 const USERS_KEY = "crm:users:ids";
 const USER_KEY = (id: string) => `crm:user:${id}`;
@@ -34,7 +37,7 @@ const SEED_USERS: DBUser[] = [
     id: "andre",
     username: "sydney3@hellostudy.com",
     displayName: "André Perez",
-    passwordHash: hashPassword("Rpcabb06"),
+    passwordHash: legacyHash("Rpcabb06"),
     role: "admin",
     office: "Sydney",
     createdAt: "2025-01-01T00:00:00.000Z",
@@ -43,7 +46,7 @@ const SEED_USERS: DBUser[] = [
     id: "andrew",
     username: "andrew.oliveira@hellostudy.com",
     displayName: "Andrew Oliveira",
-    passwordHash: hashPassword("Voc05261"),
+    passwordHash: legacyHash("Voc05261"),
     role: "consultant",
     office: "Sydney",
     createdAt: "2025-01-01T00:00:00.000Z",
@@ -52,7 +55,7 @@ const SEED_USERS: DBUser[] = [
     id: "rafael",
     username: "rafael.jacobsen@hellostudy.com",
     displayName: "Rafael Jacobsen",
-    passwordHash: hashPassword("Voc05261"),
+    passwordHash: legacyHash("Voc05261"),
     role: "admin",
     office: "Sydney",
     createdAt: "2025-01-01T00:00:00.000Z",

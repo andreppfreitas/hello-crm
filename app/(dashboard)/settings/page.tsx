@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { SecurityTab } from "@/components/settings/SecurityTab";
 
 const SECTIONS_PT = ["Perfil", "Segurança", "Usuários", "Agência", "Notificações", "Aparência", "Templates", "Dados"] as const;
 const SECTIONS_EN = ["Profile", "Security", "Users", "Agency", "Notifications", "Appearance", "Templates", "Data"] as const;
@@ -67,11 +68,6 @@ export default function SettingsPage() {
     phone: "+61 400 000 000",
   });
 
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [savingPassword, setSavingPassword] = useState(false);
-
   const [usersList, setUsersList] = useState<UserRecord[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [showNewUserForm, setShowNewUserForm] = useState(false);
@@ -124,37 +120,6 @@ export default function SettingsPage() {
 
   function handleSave() {
     toast.success(language === "en" ? "Settings saved" : "Configurações salvas");
-  }
-
-  async function handleChangePassword(e: React.FormEvent) {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      toast.error(language === "en" ? "Passwords don't match" : "As senhas não coincidem");
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast.error(language === "en" ? "Password must be at least 6 characters" : "Nova senha deve ter pelo menos 6 caracteres");
-      return;
-    }
-    setSavingPassword(true);
-    try {
-      const res = await fetch("/api/auth/change-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error ?? (language === "en" ? "Error changing password" : "Erro ao alterar senha"));
-      } else {
-        toast.success(language === "en" ? "Password changed" : "Senha alterada com sucesso");
-        setCurrentPassword(""); setNewPassword(""); setConfirmPassword("");
-      }
-    } catch {
-      toast.error(language === "en" ? "Error changing password" : "Erro ao alterar senha");
-    } finally {
-      setSavingPassword(false);
-    }
   }
 
   async function loadUsers() {
@@ -320,28 +285,7 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {activeSection === "Segurança" && (
-            <div className="glass-card rounded-xl p-6 space-y-5">
-              <h2 className="text-base font-semibold">{t("changePassword")}</h2>
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">{t("currentPassword")}</Label>
-                  <Input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="bg-secondary/50" placeholder="••••••••" />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">{t("newPassword")}</Label>
-                  <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="bg-secondary/50" placeholder={language === "en" ? "Min 6 chars" : "Mínimo 6 caracteres"} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">{language === "en" ? "Confirm new password" : "Confirmar nova senha"}</Label>
-                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="bg-secondary/50" placeholder="••••••••" />
-                </div>
-                <Button type="submit" disabled={savingPassword} className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  {savingPassword ? t("loading") : (language === "en" ? "Save new password" : "Salvar nova senha")}
-                </Button>
-              </form>
-            </div>
-          )}
+          {activeSection === "Segurança" && <SecurityTab />}
 
           {activeSection === "Usuários" && me?.role === "admin" && (
             <div className="space-y-4">
