@@ -8,7 +8,9 @@ import {
   FunnelChart, Funnel, LabelList,
 } from "recharts";
 import { cn, formatCurrency } from "@/lib/utils";
-import { TrendingUp, Clock, CheckSquare, AlertCircle } from "lucide-react";
+import { TrendingUp, Clock, CheckSquare, AlertCircle, FileSpreadsheet, FileText, FileDown } from "lucide-react";
+import { exportCSV, exportExcel, exportPDF } from "@/lib/export";
+import { toast } from "sonner";
 
 const COLORS = ["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#f43f5e", "#06b6d4", "#84cc16", "#ec4899"];
 
@@ -78,8 +80,28 @@ export default function ReportsPage() {
 
   const TOOLTIP_STYLE = { background: "#1e2a3a", border: "1px solid #334155", borderRadius: 8, fontSize: 12 };
 
+  const exportBtns = [
+    { label: "Excel", icon: FileSpreadsheet, color: "text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10", fn: () => { exportExcel(leads); toast.success("Excel exportado"); } },
+    { label: "CSV", icon: FileDown, color: "text-blue-400 border-blue-500/30 hover:bg-blue-500/10", fn: () => { exportCSV(leads); toast.success("CSV exportado"); } },
+    { label: "PDF", icon: FileText, color: "text-red-400 border-red-500/30 hover:bg-red-500/10", fn: () => exportPDF(leads) },
+  ];
+
   return (
     <div className="space-y-6">
+      {/* Export bar */}
+      <div className="flex items-center justify-end gap-2">
+        <span className="text-xs text-muted-foreground mr-1">Exportar:</span>
+        {exportBtns.map(({ label, icon: Icon, color, fn }) => (
+          <button
+            key={label}
+            onClick={fn}
+            className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors bg-secondary/30", color)}
+          >
+            <Icon className="w-3.5 h-3.5" /> {label}
+          </button>
+        ))}
+      </div>
+
       {/* Summary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
