@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useCRM } from "@/contexts/CRMContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { StatCard } from "@/components/shared/StatCard";
@@ -22,6 +23,7 @@ const COLORS = ["#f59e0b", "#3b82f6", "#8b5cf6", "#10b981", "#f43f5e", "#06b6d4"
 export default function DashboardPage() {
   const { stats, leads, reminders } = useCRM();
   const { t } = useLanguage();
+  const [showAllVisa, setShowAllVisa] = useState(false);
 
   const AU_CITIES = ["Sydney", "Melbourne", "Brisbane", "Gold Coast", "Adelaide", "Canberra", "Perth"];
   const cityData = [
@@ -197,8 +199,22 @@ export default function DashboardPage() {
     }),
   ].slice(0, 8);
 
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite";
+  const firstName = CONSULTANTS[0]?.split(" ")[0] ?? "";
+
   return (
     <div className="space-y-6">
+      {/* Greeting */}
+      <div>
+        <h2 className="text-2xl font-bold text-foreground">{greeting}, {firstName} 👋</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {priorities.length > 0
+            ? <>Você tem <span className="text-red-400 font-semibold">{priorities.length} prioridade{priorities.length > 1 ? "s" : ""}</span> hoje.</>
+            : "Tudo em dia por aqui. Nenhuma prioridade pendente. ✨"}
+        </p>
+      </div>
+
       {/* 🔥 Prioridades de Hoje */}
       {priorities.length > 0 && (
         <div className="glass-card rounded-xl p-5 border border-red-500/25 bg-red-500/5 space-y-3">
@@ -240,13 +256,21 @@ export default function DashboardPage() {
             <div className="glass-card rounded-xl p-4 border border-emerald-500/30 bg-emerald-500/5">
               <p className="text-sm font-semibold text-emerald-400 mb-2">🛂 {inVisaProcess.length} estudante(s) em processo de visto</p>
               <div className="flex flex-wrap gap-2">
-                {inVisaProcess.map((l) => (
+                {(showAllVisa ? inVisaProcess : inVisaProcess.slice(0, 5)).map((l) => (
                   <Link key={l.id} href={`/leads/${l.id}`}>
                     <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-colors">
                       {l.fullName.split(" ")[0]} · {STAGE_CONFIG[l.stage]?.label}{(() => { const d = daysInStage(l); return d !== null && d > 0 ? ` · ${d}d` : ""; })()}
                     </span>
                   </Link>
                 ))}
+                {inVisaProcess.length > 5 && (
+                  <button
+                    onClick={() => setShowAllVisa((v) => !v)}
+                    className="text-xs px-2.5 py-1 rounded-full text-emerald-400 border border-dashed border-emerald-500/40 hover:bg-emerald-500/10 transition-colors"
+                  >
+                    {showAllVisa ? "Mostrar menos" : `Mostrar todas (+${inVisaProcess.length - 5})`}
+                  </button>
+                )}
               </div>
             </div>
           )}
