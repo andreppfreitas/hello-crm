@@ -151,6 +151,7 @@ export interface EnrollmentOption {
   course: string;
   school: string;
   campus?: string;
+  tuitionFee?: string; // valor livre, ex: "AUD 12,500"
 }
 
 export interface Lead {

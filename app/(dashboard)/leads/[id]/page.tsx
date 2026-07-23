@@ -372,6 +372,16 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                       }}
                       className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
                     />
+                    <input
+                      key={enr.id + "-fee"}
+                      defaultValue={enr.tuitionFee ?? ""}
+                      placeholder="Tuition fee (ex: AUD 12,500)"
+                      onBlur={(e) => {
+                        const v = e.target.value;
+                        updateLead(lead.id, { enrollments: lead.enrollments!.map((e) => e.id === enr.id ? { ...e, tuitionFee: v || undefined } : e) });
+                      }}
+                      className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+                    />
                   </div>
                 ))}
               </div>

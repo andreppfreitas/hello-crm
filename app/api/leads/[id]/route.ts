@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbGetLead, dbSaveLead, dbDeleteLead } from "@/lib/db/leads-db";
 import { dbLogActivity } from "@/lib/db/activity-db";
-import { SESSION_COOKIE } from "@/lib/auth-config";
+import { requireSession } from "@/lib/security/auth";
 import { dbGetUser } from "@/lib/db/users-db";
 import { STAGE_CONFIG, STAGE_BEHAVIOR_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG } from "@/lib/constants";
 import type { Lead, PipelineStage, StageChangeEvent, StageChecklistItem } from "@/types";
 
 async function getSessionUser(request: NextRequest) {
-  const session = request.cookies.get(SESSION_COOKIE)?.value;
+  const session = await requireSession(request);
   if (!session) return null;
-  const [userId] = session.split(":");
-  return dbGetUser(userId);
+  return dbGetUser(session.userId);
 }
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

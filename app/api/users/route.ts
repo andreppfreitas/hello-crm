@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE } from "@/lib/auth-config";
+import { requireSession } from "@/lib/security/auth";
 import { dbGetAllUsers, dbGetUser, dbSaveUser, hashPassword, type DBUser } from "@/lib/db/users-db";
 
 async function getSessionUser(request: NextRequest) {
-  const session = request.cookies.get(SESSION_COOKIE)?.value;
+  const session = await requireSession(request);
   if (!session) return null;
-  const [userId] = session.split(":");
-  return dbGetUser(userId);
+  return dbGetUser(session.userId);
 }
 
 export async function GET(request: NextRequest) {
