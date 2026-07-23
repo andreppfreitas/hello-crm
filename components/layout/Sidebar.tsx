@@ -19,6 +19,7 @@ import {
   UserCog,
   Activity,
   TrendingUp,
+  MessageSquareText,
 } from "lucide-react";
 import { useCRM } from "@/contexts/CRMContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -44,6 +45,7 @@ export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
     { href: "/leads", label: t("leads"), icon: Users },
     { href: "/pipeline", label: t("pipeline"), icon: Kanban },
     { href: "/leads/new", label: t("newLead"), icon: PlusCircle },
+    { href: "/templates", label: "Templates", icon: MessageSquareText },
     { href: "/reminders", label: t("reminders"), icon: Bell, badge: true },
     { href: "/briefing", label: t("briefing"), icon: Sparkles },
     { href: "/reports", label: t("reports"), icon: BarChart3 },
