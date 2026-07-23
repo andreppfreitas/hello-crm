@@ -240,7 +240,7 @@ export interface MessageTemplate {
   body: string;
 }
 
-export const STAGE_TEMPLATES: Record<PipelineStage, MessageTemplate[]> = {
+const STAGE_TEMPLATES_BASE: Record<PipelineStage, MessageTemplate[]> = {
   new_lead: [
     {
       label: "Boas-vindas inicial",
@@ -490,6 +490,101 @@ export const STAGE_TEMPLATES: Record<PipelineStage, MessageTemplate[]> = {
     },
   ],
 };
+
+// Complementos por estágio — garante que TODO estágio tenha pelo menos
+// 1 template de WhatsApp e 1 de e-mail. Só é usado quando o canal falta na base.
+const FALLBACK_TEMPLATES: Record<PipelineStage, { whatsapp?: MessageTemplate; email?: MessageTemplate }> = {
+  new_lead: {},
+  first_contact: {
+    email: { label: "Primeiro contato por e-mail", channel: "email", subject: "Vamos conversar sobre seus planos na Austrália? 🇦🇺 - {name}", body: "Olá {name},\n\nSou {consultant} da Hello Australia e vou te acompanhar nessa jornada!\n\nQuero entender melhor seus objetivos para montar as melhores opções de curso em {city}. Você prefere conversar por WhatsApp ou agendar uma videochamada?\n\nÉ só responder este e-mail com o melhor horário. 😊\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  initial_docs_requested: {
+    email: { label: "Solicitação de documentos", channel: "email", subject: "Documentos necessários para seguirmos - {name}", body: "Olá {name},\n\nPara avançarmos com o seu processo, preciso dos seguintes documentos:\n\n• Passaporte (página de identificação)\n• Comprovante de escolaridade\n• Comprovante de proficiência em inglês (se tiver)\n\nPode enviar por aqui mesmo, respondendo este e-mail.\n\nQualquer dúvida, estou à disposição!\n\n{consultant}\nHello Australia" },
+  },
+  initial_docs_received: {
+    email: { label: "Documentos recebidos", channel: "email", subject: "Documentos recebidos ✅ Próximo passo: nossa reunião - {name}", body: "Olá {name},\n\nRecebi seus documentos, obrigado! ✅\n\nJá analisei tudo e gostaria de agendar uma reunião para apresentar as melhores opções de {course} em {city}.\n\nQual o melhor dia e horário para você essa semana?\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  meeting_scheduled: {
+    email: { label: "Confirmação de reunião", channel: "email", subject: "Reunião confirmada 🗓 - {name}", body: "Olá {name},\n\nNossa reunião está confirmada! 🗓\n\nVou te apresentar as opções de {course} em {city}, valores e próximos passos.\n\nSe precisar remarcar, é só me avisar por aqui ou pelo WhatsApp.\n\nAté breve!\n{consultant}\nHello Australia" },
+  },
+  quotation_prepared: {
+    email: { label: "Envio da cotação", channel: "email", subject: "Sua cotação personalizada está pronta 📋 - {name}", body: "Olá {name},\n\nPreparei uma simulação completa com as melhores opções de {course} em {city}, incluindo valores de curso, OSHC e taxas.\n\nSegue em anexo. Revise com calma e me diga o que achou — posso ajustar qualquer detalhe.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  followup: {
+    email: { label: "Follow-up da proposta", channel: "email", subject: "Alguma dúvida sobre a proposta? - {name}", body: "Olá {name},\n\nPassando para saber se você teve chance de revisar a proposta de {course} em {city}.\n\nSe tiver qualquer dúvida sobre valores, escolas ou o processo de visto, estou à disposição para esclarecer.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  student_approved_quotation: {
+    email: { label: "Confirmação e próximos passos", channel: "email", subject: "🎉 Ótima decisão! Próximos passos - {name}", body: "Olá {name},\n\nQue notícia excelente! 🎉 Fico muito feliz com a sua decisão.\n\nOs próximos passos são:\n1. Envio dos documentos para a aplicação\n2. Aplicação na escola\n3. Offer Letter\n\nVou te enviar a lista de documentos em seguida.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  application_sent: {
+    email: { label: "Aplicação enviada", channel: "email", subject: "Sua aplicação foi enviada à escola ✅ - {name}", body: "Olá {name},\n\nSua aplicação para {course} foi enviada à escola! ✅\n\nO prazo médio de resposta é de 1 a 3 dias úteis. Assim que a Offer Letter chegar, te aviso imediatamente.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  school_requested_docs: {
+    email: { label: "Documentos adicionais", channel: "email", subject: "A escola solicitou documentos adicionais - {name}", body: "Olá {name},\n\nA escola solicitou alguns documentos adicionais para completar sua aplicação. Segue a lista:\n\n• [DOCUMENTO 1]\n• [DOCUMENTO 2]\n\nQuanto antes enviar, mais rápido avançamos!\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  offer_letter_received: {},
+  final_quote_sent: {
+    email: { label: "Cotação final", channel: "email", subject: "Cotação final com todos os valores 📋 - {name}", body: "Olá {name},\n\nSegue a cotação final com todos os valores detalhados:\n\n• Curso: [VALOR]\n• OSHC (seguro saúde): [VALOR]\n• Taxa de visto: AUD 715\n\nRevise com calma e me confirme para seguirmos com o contrato.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  contract_sent: {
+    email: { label: "Contrato para assinatura", channel: "email", subject: "Contrato Hello Australia para assinatura 📋 - {name}", body: "Olá {name},\n\nSegue o contrato da Hello Australia junto com a Offer Letter para assinatura digital.\n\nPor favor, leia com atenção antes de assinar. Qualquer cláusula que queira esclarecer, me chame.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  read_carefully_email: {
+    whatsapp: { label: "Aviso do e-mail importante", channel: "whatsapp", body: "Oi {name}! 📧 Acabei de te enviar um e-mail MUITO importante com datas, valores e documentos do seu processo. Por favor, leia com bastante atenção e me confirma quando tiver lido, combinado? 🙏" },
+  },
+  documents_signed: {
+    email: { label: "Documentos assinados", channel: "email", subject: "Documentos recebidos ✅ Próximo: Visa Checklist - {name}", body: "Olá {name},\n\nRecebi todos os documentos assinados! ✅\n\nO próximo passo é o Visa Checklist — a lista completa de documentos para o visto. Envio em breve.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  visa_checklist_sent: {
+    email: { label: "Visa Checklist", channel: "email", subject: "📋 Seu Visa Checklist - documentos para o visto - {name}", body: "Olá {name},\n\nSegue o Visa Checklist com todos os documentos necessários para a aplicação do seu visto:\n\n• Passaporte válido\n• Extrato bancário (últimos 3 meses)\n• Comprovante de pagamento do curso\n• Carta de intenção (GS Letter)\n• Apólice OSHC\n\nComece a reunir tudo e me envie conforme for conseguindo.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  student_uploading_docs: {
+    email: { label: "Acompanhamento de documentos", channel: "email", subject: "Como estão os documentos do visto? - {name}", body: "Olá {name},\n\nEstou acompanhando o envio dos seus documentos para o visto.\n\nSe estiver com dificuldade em algum item do checklist, me avise que te ajudo. Quanto antes tivermos tudo, mais cedo damos entrada!\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  gs_letter_draft_sent: {
+    email: { label: "Rascunho da GS Letter", channel: "email", subject: "📝 Rascunho da sua GS Letter para revisão - {name}", body: "Olá {name},\n\nSegue o rascunho da sua GS Letter (carta de intenção).\n\nLeia com atenção, ajuste o que achar necessário e me devolva para a revisão final.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  gs_letter_approved: {
+    email: { label: "GS Letter aprovada", channel: "email", subject: "GS Letter aprovada ✅ - {name}", body: "Olá {name},\n\nSua GS Letter foi aprovada! ✅\n\nEstou fazendo a revisão final de todos os documentos antes de seguirmos para os pagamentos. Em breve te dou retorno.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  documents_complete: {
+    email: { label: "Documentos completos", channel: "email", subject: "🎉 Documentos completos! Próximo: depósito do CoE - {name}", body: "Olá {name},\n\nTodos os seus documentos estão completos e revisados! 🎉\n\nO próximo passo é o depósito do CoE junto à escola. Segue abaixo as instruções de pagamento:\n\n[INSTRUÇÕES]\n\nQualquer dúvida, me chame.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  coe_deposit_paid: {
+    email: { label: "Depósito CoE confirmado", channel: "email", subject: "Depósito do CoE confirmado ✅ - {name}", body: "Olá {name},\n\nSeu depósito do CoE foi confirmado e enviado à escola! ✅\n\nAgora aguardamos a emissão do CoE (Confirmação de Matrícula). Te aviso assim que chegar.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  coe_issued: {
+    email: { label: "CoE emitido", channel: "email", subject: "🎉 Seu CoE foi emitido! - {name}", body: "Olá {name},\n\nO seu CoE (Confirmation of Enrolment) foi emitido pela escola! 🎉\n\nSegue o documento em anexo. Confirme o recebimento para seguirmos com o OSHC.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  coe_confirmed: {
+    email: { label: "CoE confirmado - OSHC", channel: "email", subject: "CoE confirmado ✅ Próximo: OSHC - {name}", body: "Olá {name},\n\nCoE confirmado! ✅\n\nAgora precisamos do OSHC (seguro saúde obrigatório para estudantes internacionais). Segue as instruções de pagamento:\n\n[INSTRUÇÕES]\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  oshc_payment: {
+    email: { label: "Instruções OSHC", channel: "email", subject: "🏥 OSHC - instruções de pagamento - {name}", body: "Olá {name},\n\nO OSHC (Overseas Student Health Cover) é o seguro saúde obrigatório para estudantes na Austrália.\n\nValor: [VALOR]\nInstruções de pagamento: [INSTRUÇÕES]\n\nQualquer dúvida, me chame!\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  oshc_issued: {
+    email: { label: "OSHC emitido", channel: "email", subject: "OSHC emitido ✅ Próximo: taxa de visto - {name}", body: "Olá {name},\n\nSua apólice OSHC foi emitida! ✅\n\nO próximo passo é o pagamento da taxa de visto (AUD 715). Envio as instruções em seguida.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  visa_fee_paid: {
+    email: { label: "Taxa de visto confirmada", channel: "email", subject: "Taxa de visto confirmada ✅ - {name}", body: "Olá {name},\n\nO pagamento da taxa de visto foi confirmado! ✅\n\nAgora vou dar entrada na sua aplicação junto ao Departamento de Imigração. Qualquer novidade, te aviso imediatamente.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  visa_lodged: {},
+  medical_requested: {
+    email: { label: "Exame médico solicitado", channel: "email", subject: "🏥 Exame médico solicitado pela Imigração - {name}", body: "Olá {name},\n\nO Departamento de Imigração solicitou um exame médico como parte do seu processo de visto — é um procedimento normal.\n\nSegue a lista de clínicas credenciadas e instruções:\n\n[CLÍNICAS]\n\nQualquer dúvida, me chame.\n\nAtenciosamente,\n{consultant}\nHello Australia" },
+  },
+  visa_granted: {},
+};
+
+// Merge: base + fallbacks (garante WhatsApp e e-mail em todos os estágios)
+export const STAGE_TEMPLATES: Record<PipelineStage, MessageTemplate[]> = Object.fromEntries(
+  (Object.keys(STAGE_TEMPLATES_BASE) as PipelineStage[]).map((stage) => {
+    const base = [...STAGE_TEMPLATES_BASE[stage]];
+    const fb = FALLBACK_TEMPLATES[stage];
+    if (fb?.whatsapp && !base.some((t) => t.channel === "whatsapp")) base.push(fb.whatsapp);
+    if (fb?.email && !base.some((t) => t.channel === "email")) base.push(fb.email);
+    return [stage, base];
+  })
+) as Record<PipelineStage, MessageTemplate[]>;
 
 export const SOURCES = [
   "Facebook Group", "Instagram", "Referral", "Website", "WhatsApp", "Walk-in", "Event", "LinkedIn", "Other",

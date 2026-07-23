@@ -26,7 +26,7 @@ export default function ReportsPage() {
 
   const cityData = CITIES.map((city) => ({
     city,
-    count: leads.filter((l) => l.preferredCity === city).length,
+    count: leads.filter((l) => l.currentCity?.toLowerCase().includes(city.toLowerCase())).length,
   })).sort((a, b) => b.count - a.count);
 
   const tempData = [
