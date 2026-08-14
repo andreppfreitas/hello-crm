@@ -294,12 +294,14 @@ function LeadsInner() {
     list.sort((a, b) => {
       if (sortField === "score") return sortDir === "asc" ? (a.score ?? 0) - (b.score ?? 0) : (b.score ?? 0) - (a.score ?? 0);
       if (sortField === "visaExpiryDate") {
-        // Leads without a visa expiry date always sort to the bottom, regardless of direction
-        const at = a.visaExpiryDate ? new Date(a.visaExpiryDate).getTime() : Infinity;
-        const bt = b.visaExpiryDate ? new Date(b.visaExpiryDate).getTime() : Infinity;
-        if (at === Infinity && bt === Infinity) return 0;
-        if (at === Infinity) return 1;
-        if (bt === Infinity) return -1;
+        // Três blocos fixos, independentes da direção da ordenação:
+        // 1) quem tem data (ordenado por data)  2) offshore  3) sem data preenchida
+        const bucket = (l: typeof a) => (l.visaExpiryDate ? 0 : l.isOffshore ? 1 : 2);
+        const ba = bucket(a), bb = bucket(b);
+        if (ba !== bb) return ba - bb;
+        if (ba !== 0) return a.fullName.localeCompare(b.fullName);
+        const at = new Date(a.visaExpiryDate!).getTime();
+        const bt = new Date(b.visaExpiryDate!).getTime();
         return sortDir === "asc" ? at - bt : bt - at;
       }
       const av = String(a[sortField as keyof typeof a]);
