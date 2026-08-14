@@ -280,6 +280,11 @@ function LeadsInner() {
     }
     if (filterTemp) list = list.filter((l) => l.temperature === filterTemp);
     if (filterStage) list = list.filter((l) => l.stage === filterStage);
+    // Alunos em processo de visto já fecharam — não são mais leads.
+    // Só aparecem se você filtrar explicitamente por um estágio da fase Visa.
+    if (!filterStage || STAGE_CONFIG[filterStage]?.phase !== "visa") {
+      list = list.filter((l) => STAGE_CONFIG[l.stage]?.phase !== "visa");
+    }
     if (filterConsultant) list = list.filter((l) => l.assignedConsultant === filterConsultant);
     if (filterCity) list = list.filter((l) => l.currentCity?.toLowerCase().includes(filterCity.toLowerCase()));
     if (filterCourse) list = list.filter((l) => l.courseInterest?.includes(filterCourse));
