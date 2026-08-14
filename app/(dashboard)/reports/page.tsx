@@ -29,6 +29,33 @@ export default function ReportsPage() {
     count: leads.filter((l) => l.currentCity?.toLowerCase().includes(city.toLowerCase())).length,
   })).sort((a, b) => b.count - a.count);
 
+  // Conta alunos por curso/escola a partir dos enrollments, cada lead no máximo
+  // 1x por valor. Vindos do dashboard, que agora é só operacional.
+  const countStudentsBy = (getValues: (l: (typeof leads)[number]) => (string | undefined)[]) => {
+    const counts: Record<string, { name: string; value: number }> = {};
+    for (const l of leads) {
+      const unique = new Set(
+        getValues(l).map((v) => v?.trim()).filter((v): v is string => !!v).map((v) => v.toLowerCase())
+      );
+      for (const key of unique) {
+        if (!counts[key]) {
+          const original = getValues(l).find((v) => v?.trim().toLowerCase() === key)!.trim();
+          counts[key] = { name: original, value: 0 };
+        }
+        counts[key].value += 1;
+      }
+    }
+    return Object.values(counts).sort((a, b) => b.value - a.value);
+  };
+
+  const courseData = countStudentsBy((l) =>
+    l.enrollments?.length ? l.enrollments.map((e) => e.course) : [l.chosenCourse]
+  ).slice(0, 8);
+
+  const schoolData = countStudentsBy((l) =>
+    l.enrollments?.length ? l.enrollments.map((e) => e.school) : [l.chosenSchool]
+  ).slice(0, 10);
+
   const tempData = [
     { name: "Hot 🔥", value: leads.filter((l) => l.temperature === "hot").length, color: "#f43f5e" },
     { name: "Warm ☀️", value: leads.filter((l) => l.temperature === "warm").length, color: "#f59e0b" },
@@ -184,6 +211,66 @@ export default function ReportsPage() {
               <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Cursos e escolas — vindos do antigo dashboard */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div className="glass-card rounded-xl p-5">
+          <h3 className="text-sm font-semibold mb-4">Alunos por Curso</h3>
+          {courseData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhum curso registrado ainda.</p>
+          ) : (
+            <div className="flex items-center gap-4">
+              <div className="flex-shrink-0 w-[120px]">
+                <ResponsiveContainer width="100%" height={120}>
+                  <PieChart>
+                    <Pie data={courseData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={35} outerRadius={55} paddingAngle={3}>
+                      {courseData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                    </Pie>
+                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="min-w-0 flex-1 space-y-1.5">
+                {courseData.map((d, i) => (
+                  <div key={d.name} className="flex items-center gap-2 text-xs">
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                    <span className="text-muted-foreground truncate flex-1">{d.name}</span>
+                    <span className="font-semibold text-foreground">{d.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="glass-card rounded-xl p-5">
+          <h3 className="text-sm font-semibold mb-4">Alunos por Escola</h3>
+          {schoolData.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Nenhuma escola registrada ainda.</p>
+          ) : (
+            <div className="space-y-3">
+              {(() => {
+                const totalSchool = schoolData.reduce((s, d) => s + d.value, 0);
+                const max = schoolData[0]?.value ?? 1;
+                return schoolData.map((d) => {
+                  const pct = totalSchool ? Math.round((d.value / totalSchool) * 100) : 0;
+                  return (
+                    <div key={d.name} className="space-y-1">
+                      <p className="text-xs text-muted-foreground truncate">{d.name}</p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex-1 h-2.5 rounded-full bg-secondary/50 overflow-hidden">
+                          <div className="h-full rounded-full bg-violet-500" style={{ width: `${(d.value / max) * 100}%` }} />
+                        </div>
+                        <span className="text-xs font-semibold text-foreground flex-shrink-0 w-16 text-right">{d.value} ({pct}%)</span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
         </div>
       </div>
 
