@@ -146,12 +146,22 @@ export interface StageChecklistItem {
   done: boolean;
 }
 
+export type CommissionStatus = "pending" | "invoiced" | "received";
+
 export interface EnrollmentOption {
   id: string;
   course: string;
   school: string;
   campus?: string;
-  tuitionFee?: string; // valor livre, ex: "AUD 12,500"
+  tuitionFee?: string;          // valor livre, ex: "AUD 12,500"
+  courseStartDate?: string;     // ISO date YYYY-MM-DD — define os prazos para trás
+  // Comissão que a Hello recebe da escola
+  commissionRate?: number;      // percentual sobre a tuition, ex: 25
+  commissionStatus?: CommissionStatus;
+  commissionInvoicedAt?: string;
+  commissionReceivedAt?: string;
+  /** Marca a opção que o aluno realmente fechou. Só ela entra no faturamento. */
+  confirmed?: boolean;
 }
 
 export interface Lead {

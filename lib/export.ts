@@ -1,15 +1,22 @@
 import type { Lead } from "@/types";
 import { STAGE_CONFIG, PHASE_CONFIG, TEMPERATURE_CONFIG } from "./constants";
 import { computeScore } from "./scoring";
+import { billableEnrollments, leadCommission } from "./commission";
 
 const HEADERS = [
   "Nome", "Email", "Telefone", "País", "Cidade Atual", "Temperatura",
-  "Fase", "Estágio", "Consultor", "Aluno Hello", "Origem", "Cursos", "Escolas", "Score", "Criado em",
+  "Fase", "Estágio", "Consultor", "Aluno Hello", "Origem", "Cursos", "Escolas",
+  "Tuition", "Comissão %", "Comissão (AUD)", "Status Comissão", "Início do curso",
+  "Score", "Criado em",
 ];
+
+const COMMISSION_STATUS_LABELS = { pending: "A faturar", invoiced: "Faturado", received: "Recebido" } as const;
 
 function leadRow(l: Lead): string[] {
   const stageCfg = STAGE_CONFIG[l.stage];
   const enrollments = (l.enrollments ?? []).filter((e) => e.course?.trim() || e.school?.trim());
+  const billable = billableEnrollments(l);
+  const commission = leadCommission(l).total;
   return [
     l.fullName,
     l.email,
@@ -24,6 +31,12 @@ function leadRow(l: Lead): string[] {
     l.source,
     enrollments.map((e) => e.course).filter(Boolean).join(" | "),
     enrollments.map((e) => e.school).filter(Boolean).join(" | "),
+    // Dados de comissão vêm do enrollment fechado (ou da única opção existente)
+    billable.map((e) => e.tuitionFee).filter(Boolean).join(" | "),
+    billable.map((e) => (e.commissionRate ? `${e.commissionRate}%` : "")).filter(Boolean).join(" | "),
+    commission > 0 ? String(Math.round(commission)) : "",
+    billable.map((e) => COMMISSION_STATUS_LABELS[e.commissionStatus ?? "pending"]).join(" | "),
+    billable.map((e) => e.courseStartDate).filter(Boolean).join(" | "),
     String(computeScore(l)),
     l.createdAt ? new Date(l.createdAt).toLocaleDateString("pt-BR") : "",
   ];

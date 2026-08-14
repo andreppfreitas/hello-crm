@@ -9,6 +9,9 @@ import { computeScore, scoreColor, scoreBarColor } from "@/lib/scoring";
 import type { VisaChecklistItem, NextAction, WaitingFor } from "@/types";
 import { STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG, CONSULTANTS, CITIES, COURSES, TASK_TEMPLATES, STAGE_BEHAVIOR_CONFIG, NEXT_ACTION_CONFIG, NEXT_ACTION_OPTIONS, WAITING_FOR_CONFIG, WAITING_FOR_OPTIONS, TEMPERATURE_CONFIG } from "@/lib/constants";
 import { getAutoTasks, getAutoTaskDef } from "@/lib/auto-tasks";
+import { useAuth } from "@/contexts/AuthContext";
+import { enrollmentCommission, formatAUD } from "@/lib/commission";
+import { PaymentsTab } from "@/components/leads/PaymentsTab";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -45,6 +48,7 @@ const VISA_PRESETS = [
 export default function LeadProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { getLead, updateLead, removeLead, addReminder } = useCRM();
+  const { user } = useAuth();
   const router = useRouter();
   const lead = getLead(id);
 
@@ -118,7 +122,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
     const note: Note = {
       id: `note-${Date.now()}`,
       content: newNote.trim(),
-      authorName: CONSULTANTS[0],
+      authorName: user?.displayName ?? lead.assignedConsultant,
       createdAt: now,
       type: noteType,
     };
@@ -139,7 +143,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
       type: noteType === "call" ? "call" : noteType === "email" ? "email" : noteType === "whatsapp" ? "whatsapp" : "other",
       note: note.content,
       dueAt: dueAt.toISOString(),
-      authorName: CONSULTANTS[0],
+      authorName: user?.displayName ?? lead.assignedConsultant,
     });
     setNewNote("");
     toast.success("Note adicionada + lembrete criado para amanhã");
@@ -339,15 +343,34 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
             ) : (
               <div className="space-y-3">
                 {lead.enrollments.map((enr, idx) => (
-                  <div key={enr.id} className="space-y-2 p-3 rounded-lg bg-secondary/30 border border-border">
+                  <div key={enr.id} className={cn(
+                    "space-y-2 p-3 rounded-lg border",
+                    enr.confirmed ? "bg-emerald-500/5 border-emerald-500/30" : "bg-secondary/30 border-border"
+                  )}>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-muted-foreground font-medium">Opção {idx + 1}</span>
-                      <button
-                        onClick={() => updateLead(lead.id, { enrollments: lead.enrollments!.filter((e) => e.id !== enr.id) })}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => updateLead(lead.id, {
+                            // só uma opção pode ser a fechada
+                            enrollments: lead.enrollments!.map((e) => ({ ...e, confirmed: e.id === enr.id ? !enr.confirmed : false })),
+                          })}
+                          className={cn(
+                            "text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors",
+                            enr.confirmed
+                              ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                              : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {enr.confirmed ? "✓ Fechada" : "Marcar como fechada"}
+                        </button>
+                        <button
+                          onClick={() => updateLead(lead.id, { enrollments: lead.enrollments!.filter((e) => e.id !== enr.id) })}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                     <input
                       key={enr.id + "-course"}
@@ -379,16 +402,97 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
                       }}
                       className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
                     />
-                    <input
-                      key={enr.id + "-fee"}
-                      defaultValue={enr.tuitionFee ?? ""}
-                      placeholder="Tuition fee (ex: AUD 12,500)"
-                      onBlur={(e) => {
-                        const v = e.target.value;
-                        updateLead(lead.id, { enrollments: lead.enrollments!.map((e) => e.id === enr.id ? { ...e, tuitionFee: v || undefined } : e) });
-                      }}
-                      className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
-                    />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        key={enr.id + "-fee"}
+                        defaultValue={enr.tuitionFee ?? ""}
+                        placeholder="Tuition (AUD 12,500)"
+                        onBlur={(e) => {
+                          const v = e.target.value;
+                          updateLead(lead.id, { enrollments: lead.enrollments!.map((e) => e.id === enr.id ? { ...e, tuitionFee: v || undefined } : e) });
+                        }}
+                        className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+                      />
+                      <div className="relative">
+                        <input
+                          key={enr.id + "-rate"}
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.5}
+                          defaultValue={enr.commissionRate ?? ""}
+                          placeholder="Comissão"
+                          onBlur={(e) => {
+                            const v = e.target.value === "" ? undefined : Number(e.target.value);
+                            updateLead(lead.id, { enrollments: lead.enrollments!.map((e) => e.id === enr.id ? { ...e, commissionRate: v } : e) });
+                          }}
+                          className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 pr-6 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/50"
+                        />
+                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">%</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Início do curso</label>
+                      <input
+                        key={enr.id + "-start"}
+                        type="date"
+                        defaultValue={enr.courseStartDate ?? ""}
+                        onBlur={(e) => {
+                          const v = e.target.value;
+                          updateLead(lead.id, { enrollments: lead.enrollments!.map((e) => e.id === enr.id ? { ...e, courseStartDate: v || undefined } : e) });
+                        }}
+                        className="w-full text-sm bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5 text-foreground focus:outline-none focus:border-primary/50"
+                      />
+                    </div>
+
+                    {/* Comissão calculada + status de faturamento */}
+                    {(() => {
+                      const value = enrollmentCommission(enr);
+                      if (value === null) {
+                        return (enr.tuitionFee || enr.commissionRate) ? (
+                          <p className="text-[10px] text-amber-400">
+                            Preencha tuition e % para calcular a comissão.
+                          </p>
+                        ) : null;
+                      }
+                      return (
+                        <div className="space-y-1.5 pt-1 border-t border-border/50">
+                          <p className="text-xs text-emerald-300 font-medium">
+                            Comissão: {formatAUD(value)}
+                          </p>
+                          <div className="flex gap-1">
+                            {(["pending", "invoiced", "received"] as const).map((st) => {
+                              const labels = { pending: "A faturar", invoiced: "Faturado", received: "Recebido" };
+                              const active = (enr.commissionStatus ?? "pending") === st;
+                              return (
+                                <button
+                                  key={st}
+                                  onClick={() => updateLead(lead.id, {
+                                    enrollments: lead.enrollments!.map((e) => e.id === enr.id ? {
+                                      ...e,
+                                      commissionStatus: st,
+                                      commissionInvoicedAt: st === "invoiced" || st === "received" ? (e.commissionInvoicedAt ?? new Date().toISOString()) : undefined,
+                                      commissionReceivedAt: st === "received" ? (e.commissionReceivedAt ?? new Date().toISOString()) : undefined,
+                                    } : e),
+                                  })}
+                                  className={cn(
+                                    "flex-1 text-[10px] py-1 rounded-md border transition-colors",
+                                    active
+                                      ? st === "received" ? "bg-emerald-500/20 border-emerald-500/40 text-emerald-300"
+                                        : st === "invoiced" ? "bg-blue-500/20 border-blue-500/40 text-blue-300"
+                                        : "bg-amber-500/20 border-amber-500/40 text-amber-300"
+                                      : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground"
+                                  )}
+                                >
+                                  {labels[st]}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))}
               </div>
@@ -805,29 +909,7 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
             )}
 
             {activeTab === "Payments" && (
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold">Payment Tracking</h3>
-                {lead.payments.length === 0 && <p className="text-sm text-muted-foreground">No payments recorded yet.</p>}
-                {lead.payments.map((pay) => (
-                  <div key={pay.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{pay.label}</p>
-                      {pay.dueDate && <p className="text-xs text-muted-foreground">Due {pay.dueDate}</p>}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-foreground">{formatCurrency(pay.amount, pay.currency)}</p>
-                      <span className={cn(
-                        "text-xs px-2 py-0.5 rounded-full",
-                        pay.status === "collected" ? "bg-emerald-500/20 text-emerald-300" :
-                        pay.status === "overdue" ? "bg-red-500/20 text-red-300" :
-                        "bg-yellow-500/20 text-yellow-300"
-                      )}>
-                        {pay.status}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <PaymentsTab lead={lead} onUpdate={(payments) => updateLead(lead.id, { payments })} />
             )}
 
             {activeTab === "Visa" && (

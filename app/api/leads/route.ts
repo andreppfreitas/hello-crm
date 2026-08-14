@@ -13,7 +13,11 @@ async function getSessionUser(request: NextRequest) {
 }
 
 // Auto-seed if DB is empty
+// Seed automático DESLIGADO — este é um sistema em uso real e uma base vazia
+// não pode virar 50 alunos fictícios. Para popular um ambiente de demo,
+// defina SEED_DEMO_LEADS=true no ambiente.
 async function ensureSeeded() {
+  if (process.env.SEED_DEMO_LEADS !== "true") return;
   const count = await dbLeadsCount();
   if (count === 0) {
     const seeds = generateSeedLeads(50);
