@@ -1,5 +1,5 @@
-import type { Lead, Reminder, NextAction } from "@/types";
-import { STAGE_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG } from "./constants";
+import type { Lead, Reminder, NextAction, PipelineStage } from "@/types";
+import { STAGE_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG, PHASE_ORDER, PHASE_CONFIG } from "./constants";
 
 /**
  * Fila única de trabalho do consultor.
@@ -84,7 +84,10 @@ export function buildWorkQueue(leads: Lead[], reminders: Reminder[], now = Date.
     const phase = STAGE_CONFIG[lead.stage]?.phase;
 
     // 2. Visto vencendo — prazo legal, não espera
-    if (lead.visaExpiryDate && phase !== "visa") {
+    const snoozed = lead.visaAlertSnoozedUntil
+      ? new Date(lead.visaAlertSnoozedUntil).getTime() > now
+      : false;
+    if (lead.visaExpiryDate && phase !== "visa" && !snoozed) {
       const left = daysBetween(now, new Date(lead.visaExpiryDate).getTime());
       if (left <= 30) {
         items.push({
@@ -165,6 +168,17 @@ export function buildWorkQueue(leads: Lead[], reminders: Reminder[], now = Date.
   }
 
   return items.sort((a, b) => b.urgency - a.urgency || a.leadName.localeCompare(b.leadName));
+}
+
+/** Sequência linear de todos os estágios, na ordem do pipeline. */
+export const STAGE_SEQUENCE: PipelineStage[] = PHASE_ORDER.flatMap(
+  (phase) => PHASE_CONFIG[phase].stages
+);
+
+/** Próximo estágio do fluxo, ou null se já está no fim. */
+export function nextStage(current: PipelineStage): PipelineStage | null {
+  const i = STAGE_SEQUENCE.indexOf(current);
+  return i >= 0 && i < STAGE_SEQUENCE.length - 1 ? STAGE_SEQUENCE[i + 1] : null;
 }
 
 export function queueCounts(items: QueueItem[]): Record<QueueKind, number> {

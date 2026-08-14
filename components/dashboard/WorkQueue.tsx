@@ -2,8 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { toast } from "sonner";
 import type { Lead, Reminder } from "@/types";
-import { buildWorkQueue, queueCounts, KIND_LABEL, type QueueKind } from "@/lib/work-queue";
+import { buildWorkQueue, queueCounts, KIND_LABEL, nextStage, type QueueKind, type QueueItem } from "@/lib/work-queue";
+import { STAGE_CONFIG } from "@/lib/constants";
+import { logContact } from "@/lib/contact-log";
+import { useCRM } from "@/contexts/CRMContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { MessageCircle, ChevronRight, Check } from "lucide-react";
 
@@ -26,6 +31,8 @@ interface Props {
 export function WorkQueue({ leads, reminders, onCompleteReminder }: Props) {
   const [filter, setFilter] = useState<QueueKind | "all">("all");
   const [limit, setLimit] = useState(PAGE);
+  const { updateLead } = useCRM();
+  const { user } = useAuth();
 
   const queue = useMemo(() => buildWorkQueue(leads, reminders), [leads, reminders]);
   const counts = useMemo(() => queueCounts(queue), [queue]);
@@ -38,6 +45,54 @@ export function WorkQueue({ leads, reminders, onCompleteReminder }: Props) {
     if (!phone) return;
     const raw = phone.replace(/\D/g, "");
     window.open(`https://wa.me/${raw.startsWith("55") ? raw : `55${raw}`}`, "_blank");
+  }
+
+  /**
+   * Concluir significa coisas diferentes por tipo. Em todos os casos o item sai
+   * da fila; nos que envolvem falar com o aluno, o contato fica registrado.
+   * Depois, oferece avançar para a próxima etapa do fluxo — sem avançar sozinho,
+   * porque mudança de etapa dispara lembrete, checklist e log de atividade.
+   */
+  function complete(item: QueueItem) {
+    const lead = leads.find((l) => l.id === item.leadId);
+    const author = user?.displayName ?? lead?.assignedConsultant ?? "Sistema";
+
+    if (item.kind === "reminder") {
+      onCompleteReminder?.(item.id.replace(/^rem-/, ""));
+      if (lead) updateLead(lead.id, logContact(lead, "call", `Concluído: ${item.task}`, author));
+    } else if (item.kind === "visa" && lead) {
+      // Vencimento de visto é um fato, não some por ser concluído — silencia por 7 dias
+      const until = new Date();
+      until.setDate(until.getDate() + 7);
+      updateLead(lead.id, { visaAlertSnoozedUntil: until.toISOString() });
+      toast.success(`Alerta de visto de ${item.leadName.split(" ")[0]} silenciado por 7 dias`);
+      return;
+    } else if (lead) {
+      // travado / próxima ação / sem contato — todos se resolvem com contato feito
+      updateLead(lead.id, {
+        ...logContact(lead, "call", `Concluído: ${item.task}`, author),
+        ...(item.kind === "action" ? { nextAction: null } : {}),
+        ...(item.kind === "stuck" ? { waitingFor: null } : {}),
+      });
+    }
+
+    if (!lead) return;
+    const next = nextStage(lead.stage);
+    if (!next) {
+      toast.success("Tarefa concluída");
+      return;
+    }
+    toast.success("Tarefa concluída", {
+      description: `Próxima etapa do fluxo: ${STAGE_CONFIG[next].label}`,
+      action: {
+        label: "Avançar",
+        onClick: () => {
+          updateLead(lead.id, { stage: next });
+          toast.success(`${lead.fullName.split(" ")[0]} movido para ${STAGE_CONFIG[next].label}`);
+        },
+      },
+      duration: 8000,
+    });
   }
 
   if (queue.length === 0) {
@@ -104,15 +159,13 @@ export function WorkQueue({ leads, reminders, onCompleteReminder }: Props) {
             </div>
 
             <div className="flex items-center gap-1 flex-shrink-0">
-              {item.kind === "reminder" && onCompleteReminder && (
-                <button
-                  onClick={() => onCompleteReminder(item.id.replace(/^rem-/, ""))}
-                  title="Marcar como feito"
-                  className="p-2 rounded-lg text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-                >
-                  <Check className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                onClick={() => complete(item)}
+                title={item.kind === "visa" ? "Já tratei — silenciar por 7 dias" : "Concluir"}
+                className="p-2 rounded-lg text-muted-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+              >
+                <Check className="w-4 h-4" />
+              </button>
               {item.phone && (
                 <button
                   onClick={() => openWhatsApp(item.phone)}

@@ -208,6 +208,8 @@ export interface Lead {
   // Visa / offshore status
   currentVisaType?: string;
   visaExpiryDate?: string;      // ISO date string YYYY-MM-DD
+  /** Alerta de visto silenciado até esta data — o vencimento continua valendo. */
+  visaAlertSnoozedUntil?: string;
   isOffshore?: boolean;         // currently outside home country (e.g. already in Australia)
   // Group (casal / família)
   groupId?: string;
