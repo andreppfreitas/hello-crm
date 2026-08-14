@@ -28,14 +28,20 @@ type Channel = "whatsapp" | "email";
 export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
   const [channel, setChannel] = useState<Channel>("whatsapp");
   const templates = (STAGE_TEMPLATES[lead.stage] ?? []).filter((t) => t.channel === channel);
-  const [selected, setSelected] = useState(0);
+  // null = sem template (mensagem livre / abrir conversa em branco)
+  const [selected, setSelected] = useState<number | null>(null);
   const [text, setText] = useState("");
   const [subject, setSubject] = useState("");
 
-  function applyTemplate(idx: number, ch: Channel) {
+  function applyTemplate(idx: number | null, ch: Channel) {
+    setSelected(idx);
+    if (idx === null) {
+      setText("");
+      setSubject("");
+      return;
+    }
     const list = (STAGE_TEMPLATES[lead.stage] ?? []).filter((t) => t.channel === ch);
     const t = list[idx];
-    setSelected(idx);
     setText(t ? fillTemplate(t.body, lead) : "");
     setSubject(t?.subject ? fillTemplate(t.subject, lead) : "");
   }
@@ -43,7 +49,7 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
   useEffect(() => {
     if (isOpen) {
       setChannel("whatsapp");
-      applyTemplate(0, "whatsapp");
+      applyTemplate(null, "whatsapp");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, lead.id]);
@@ -52,14 +58,16 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
 
   function switchChannel(ch: Channel) {
     setChannel(ch);
-    applyTemplate(0, ch);
+    applyTemplate(null, ch);
   }
 
   function send() {
     if (channel === "whatsapp") {
       const raw = lead.phone.replace(/\D/g, "");
       const phone = raw.startsWith("55") ? raw : `55${raw}`;
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+      // sem texto = abre a conversa em branco
+      const url = text.trim() ? `https://wa.me/${phone}?text=${encodeURIComponent(text)}` : `https://wa.me/${phone}`;
+      window.open(url, "_blank");
     } else {
       window.open(
         `mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`,
@@ -125,31 +133,40 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
           </div>
 
           {/* Template selector */}
-          {hasTemplates && (
-            <div className="space-y-1.5">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Templates do estágio
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {templates.map((t, i) => (
-                  <button
-                    key={i}
-                    onClick={() => applyTemplate(i, channel)}
-                    className={cn(
-                      "text-xs px-3 py-1.5 rounded-lg border transition-colors",
-                      selected === i
-                        ? isWa
-                          ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
-                          : "bg-blue-500/15 border-blue-500/30 text-blue-300"
-                        : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              {hasTemplates ? "Escolha um template" : "Sem template para este estágio"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => applyTemplate(null, channel)}
+                className={cn(
+                  "text-xs px-3 py-1.5 rounded-lg border transition-colors",
+                  selected === null
+                    ? "bg-primary/15 border-primary/30 text-primary"
+                    : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground"
+                )}
+              >
+                ✏️ Sem template
+              </button>
+              {templates.map((t, i) => (
+                <button
+                  key={i}
+                  onClick={() => applyTemplate(i, channel)}
+                  className={cn(
+                    "text-xs px-3 py-1.5 rounded-lg border transition-colors",
+                    selected === i
+                      ? isWa
+                        ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+                        : "bg-blue-500/15 border-blue-500/30 text-blue-300"
+                      : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Subject (email only) */}
           {!isWa && (
@@ -166,9 +183,7 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
 
           {/* Editable textarea */}
           <div className="space-y-1.5">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Mensagem {!hasTemplates && "(sem template para este estágio — escreva sua mensagem)"}
-            </p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Mensagem</p>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -177,7 +192,7 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
                 "w-full bg-secondary/30 border border-border rounded-xl px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground resize-none outline-none transition-colors",
                 isWa ? "focus:border-emerald-500/50" : "focus:border-blue-500/50"
               )}
-              placeholder="Digite sua mensagem..."
+              placeholder={isWa ? "Deixe em branco para abrir a conversa sem mensagem, ou escreva aqui..." : "Digite sua mensagem..."}
             />
             <p className="text-[10px] text-muted-foreground text-right">{text.length} caracteres</p>
           </div>
@@ -193,14 +208,14 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
           </button>
           <button
             onClick={send}
-            disabled={!text.trim() || (!isWa && !lead.email)}
+            disabled={isWa ? !lead.phone : !lead.email || !text.trim()}
             className={cn(
               "h-9 px-5 rounded-lg text-sm font-medium text-white transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed",
               isWa ? "bg-emerald-600 hover:bg-emerald-500" : "bg-blue-600 hover:bg-blue-500"
             )}
           >
             {isWa ? <MessageCircle className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
-            {isWa ? "Abrir WhatsApp" : "Abrir E-mail"}
+            {isWa ? (text.trim() ? "Abrir WhatsApp" : "Abrir conversa") : "Abrir E-mail"}
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         </div>
