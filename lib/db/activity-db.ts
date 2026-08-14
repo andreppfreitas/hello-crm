@@ -28,3 +28,17 @@ export async function dbGetCustomTemplates(): Promise<CustomTemplate[]> {
 export async function dbSaveCustomTemplates(templates: CustomTemplate[]): Promise<void> {
   await redis.set(TEMPLATES_KEY, templates);
 }
+
+// ── Passos do processo por etapa (sobrescrevem TASK_TEMPLATES) ─────────────────
+
+const STEPS_KEY = "crm:custom:stage-steps";
+
+/** Mapa etapa → lista de passos. Só guarda as etapas que foram customizadas. */
+export async function dbGetStageSteps(): Promise<Record<string, string[]>> {
+  const data = await redis.get<Record<string, string[]>>(STEPS_KEY);
+  return data ?? {};
+}
+
+export async function dbSaveStageSteps(steps: Record<string, string[]>): Promise<void> {
+  await redis.set(STEPS_KEY, steps);
+}

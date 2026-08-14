@@ -8,6 +8,7 @@ import type { Lead, DashboardStats, Reminder } from "@/types";
 import { STAGE_CONFIG, STAGE_AUTO_REMINDER } from "@/lib/constants";
 import { buildNewLead, uid } from "@/lib/lead-builder";
 import { toast } from "sonner";
+import { setStepOverrides } from "@/lib/task-chain";
 import { useAuth } from "@/contexts/AuthContext";
 
 // ── Stats computed client-side from lead array ────────────────────────────────
@@ -71,8 +72,11 @@ export function CRMProvider({ children }: { children: ReactNode }) {
     Promise.all([
       fetch("/api/leads").then((r) => r.json()),
       fetch("/api/reminders").then((r) => r.json()),
+      fetch("/api/stage-steps").then((r) => r.json()).catch(() => ({ steps: {} })),
     ])
-      .then(([leadsData, remindersData]) => {
+      .then(([leadsData, remindersData, stepsData]) => {
+        // passos customizados do processo, antes de qualquer coisa usar a corrente
+        setStepOverrides(stepsData?.steps ?? {});
         const loadedLeads: Lead[] = leadsData.leads ?? [];
         const filtered = filterLeads(loadedLeads);
         setLeads(filtered);

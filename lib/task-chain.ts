@@ -12,9 +12,27 @@ import { TASK_TEMPLATES } from "./constants";
  * mexer numa lista de strings, não no código.
  */
 
+export type StepOverrides = Record<string, string[]>;
+
+/**
+ * Passos customizados nas Configurações. No cliente é hidratado uma vez pelo
+ * CRMContext; no servidor as rotas passam o override explicitamente, para não
+ * compartilhar estado entre requisições.
+ */
+let clientOverrides: StepOverrides = {};
+export function setStepOverrides(steps: StepOverrides) {
+  clientOverrides = steps ?? {};
+}
+
+/** Passos vigentes de uma etapa: o customizado vence o padrão. */
+export function stepsFor(stage: PipelineStage, overrides?: StepOverrides): string[] {
+  const custom = (overrides ?? clientOverrides)[stage];
+  return custom?.length ? custom : TASK_TEMPLATES[stage] ?? [];
+}
+
 /** Monta o passo `index` da etapa. Null quando a etapa não tem mais passos. */
-export function buildChainTask(stage: PipelineStage, index: number): Task | null {
-  const steps = TASK_TEMPLATES[stage] ?? [];
+export function buildChainTask(stage: PipelineStage, index: number, overrides?: StepOverrides): Task | null {
+  const steps = stepsFor(stage, overrides);
   if (index < 0 || index >= steps.length) return null;
   return {
     id: `chain-${stage}-${index}-${Date.now()}`,
@@ -27,8 +45,8 @@ export function buildChainTask(stage: PipelineStage, index: number): Task | null
 }
 
 /** Primeiro passo de uma etapa — usado ao criar o lead e ao mudar de etapa. */
-export function firstChainTask(stage: PipelineStage): Task | null {
-  return buildChainTask(stage, 0);
+export function firstChainTask(stage: PipelineStage, overrides?: StepOverrides): Task | null {
+  return buildChainTask(stage, 0, overrides);
 }
 
 /**
@@ -65,7 +83,7 @@ function parseVirtualId(id: string): { stage: PipelineStage; index: number } | n
 
 /** Quantos passos da etapa atual já foram concluídos. */
 export function chainProgress(lead: Lead): { done: number; total: number } {
-  const total = (TASK_TEMPLATES[lead.stage] ?? []).length;
+  const total = stepsFor(lead.stage).length;
   const done = (lead.tasks ?? []).filter(
     (t) => t.chain && t.completed && t.stage === lead.stage
   ).length;

@@ -6,16 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CONSULTANTS, CITIES } from "@/lib/constants";
 import { toast } from "sonner";
-import { User, Building2, Bell, Palette, Database, Lock, Users, MessageCircle, Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { ListChecks, User, Building2, Bell, Palette, Database, Lock, Users, MessageCircle, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import type { CustomTemplate } from "@/types";
 import { cn } from "@/lib/utils";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { SecurityTab } from "@/components/settings/SecurityTab";
+import { StageStepsTab } from "@/components/settings/StageStepsTab";
 
-const SECTIONS_PT = ["Perfil", "Segurança", "Usuários", "Agência", "Notificações", "Aparência", "Templates", "Dados"] as const;
-const SECTIONS_EN = ["Profile", "Security", "Users", "Agency", "Notifications", "Appearance", "Templates", "Data"] as const;
+const SECTIONS_PT = ["Perfil", "Segurança", "Usuários", "Agência", "Processo", "Notificações", "Aparência", "Templates", "Dados"] as const;
+const SECTIONS_EN = ["Profile", "Security", "Users", "Agency", "Process", "Notifications", "Appearance", "Templates", "Data"] as const;
 type SectionPT = typeof SECTIONS_PT[number];
 type SectionEN = typeof SECTIONS_EN[number];
 type Section = SectionPT;
@@ -25,6 +26,7 @@ const ICONS: Record<Section, React.ElementType> = {
   Segurança: Lock,
   Usuários: Users,
   Agência: Building2,
+  Processo: ListChecks,
   Notificações: Bell,
   Aparência: Palette,
   Templates: MessageCircle,
@@ -58,8 +60,8 @@ export default function SettingsPage() {
 
   const SECTIONS = language === "en" ? SECTIONS_EN : SECTIONS_PT;
   const SECTION_MAP: Record<string, Section> = language === "en"
-    ? { "Profile": "Perfil", "Security": "Segurança", "Users": "Usuários", "Agency": "Agência", "Notifications": "Notificações", "Appearance": "Aparência", "Templates": "Templates", "Data": "Dados" }
-    : { "Perfil": "Perfil", "Segurança": "Segurança", "Usuários": "Usuários", "Agência": "Agência", "Notificações": "Notificações", "Aparência": "Aparência", "Templates": "Templates", "Dados": "Dados" };
+    ? { "Profile": "Perfil", "Security": "Segurança", "Users": "Usuários", "Agency": "Agência", "Process": "Processo", "Notifications": "Notificações", "Appearance": "Aparência", "Templates": "Templates", "Data": "Dados" }
+    : { "Perfil": "Perfil", "Segurança": "Segurança", "Usuários": "Usuários", "Agência": "Agência", "Processo": "Processo", "Notificações": "Notificações", "Aparência": "Aparência", "Templates": "Templates", "Dados": "Dados" };
 
   const [profile, setProfile] = useState({
     name: "André Perez",
@@ -286,6 +288,8 @@ export default function SettingsPage() {
           )}
 
           {activeSection === "Segurança" && <SecurityTab />}
+
+          {activeSection === "Processo" && <StageStepsTab isAdmin={me?.role === "admin"} />}
 
           {activeSection === "Usuários" && me?.role === "admin" && (
             <div className="space-y-4">

@@ -5,6 +5,7 @@ import { requireSession } from "@/lib/security/auth";
 import { dbGetUser } from "@/lib/db/users-db";
 import { STAGE_CONFIG, STAGE_BEHAVIOR_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG } from "@/lib/constants";
 import { firstChainTask } from "@/lib/task-chain";
+import { dbGetStageSteps } from "@/lib/db/activity-db";
 import type { Lead, PipelineStage, StageChangeEvent, StageChecklistItem } from "@/types";
 
 async function getSessionUser(request: NextRequest) {
@@ -69,7 +70,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       // Corrente do processo: a nova etapa já abre o primeiro passo dela.
       // Fica no servidor para valer venha a mudança de onde vier (pipeline,
       // perfil ou fila de trabalho).
-      const firstStep = firstChainTask(data.stage as PipelineStage);
+      const firstStep = firstChainTask(data.stage as PipelineStage, await dbGetStageSteps());
       if (firstStep && !(updated.tasks ?? []).some((t) => t.chain && !t.completed && t.stage === data.stage)) {
         updated.tasks = [...(updated.tasks ?? []), firstStep];
       }
