@@ -5,6 +5,9 @@ import { STAGE_TEMPLATES, PHASE_ORDER, PHASE_CONFIG, STAGE_CONFIG } from "@/lib/
 import type { Lead, PhaseGroup, PipelineStage } from "@/types";
 import { X, MessageCircle, Mail, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCRM } from "@/contexts/CRMContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { logContact, contactSummary } from "@/lib/contact-log";
 
 interface Props {
   lead: Lead;
@@ -26,6 +29,8 @@ function fillTemplate(body: string, lead: Lead): string {
 type Channel = "whatsapp" | "email";
 
 export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
+  const { updateLead } = useCRM();
+  const { user } = useAuth();
   const currentPhase = STAGE_CONFIG[lead.stage]?.phase ?? "leads";
   const [channel, setChannel] = useState<Channel>("whatsapp");
   const [phase, setPhase] = useState<PhaseGroup>(currentPhase);
@@ -98,6 +103,12 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
         "_blank"
       );
     }
+
+    // Registra o contato — alimenta lastContactAt e o histórico do lead
+    const label = selectedKey ? templates.find((t) => t.key === selectedKey)?.label ?? null : null;
+    const author = user?.displayName ?? lead.assignedConsultant;
+    updateLead(lead.id, logContact(lead, channel, contactSummary(channel, label, channel === "email" ? subject || text : text), author));
+
     onClose();
   }
 

@@ -136,8 +136,9 @@ export default function DashboardPage() {
   // Stuck leads — waitingFor set, no activity for 3+ days, NOT in visa process
   const stuckLeads = activeLeadsList
     .map((l) => {
+      // Mesmo critério do "esquecido": conta contato e mudança de estágio, não edição de campo
       const candidates = [
-        l.updatedAt ? new Date(l.updatedAt).getTime() : 0,
+        l.createdAt ? new Date(l.createdAt).getTime() : 0,
         l.lastContactAt ? new Date(l.lastContactAt).getTime() : 0,
         ...(l.stageChanges ?? []).map((sc) => new Date(sc.changedAt).getTime()),
       ].filter((t) => t > 0);
@@ -152,10 +153,11 @@ export default function DashboardPage() {
     const phase = STAGE_CONFIG[l.stage]?.phase;
     if (!ACTIVE_PHASES.includes(phase)) return false;
 
-    // Find the most recent activity date across all signals
+    // Esquecido = sem CONTATO real há mais de 7 dias.
+    // updatedAt de propósito fora da conta: editar um campo do lead não é falar com o aluno.
+    // createdAt entra como piso para não marcar lead recém-criado como esquecido.
     const candidates: number[] = [
       l.createdAt ? new Date(l.createdAt).getTime() : 0,
-      l.updatedAt ? new Date(l.updatedAt).getTime() : 0,
       l.lastContactAt ? new Date(l.lastContactAt).getTime() : 0,
       ...(l.stageChanges ?? []).map((sc) => new Date(sc.changedAt).getTime()),
       ...(l.notesList ?? []).map((n) => new Date(n.createdAt).getTime()),
@@ -482,8 +484,10 @@ export default function DashboardPage() {
                       <p className="text-xs text-muted-foreground truncate">
                         {lead.enrollments?.find((e) => e.course?.trim())?.course ?? lead.courseInterest}
                         {(() => {
-                          const d = daysSince(lead.lastContactAt ?? lead.updatedAt);
-                          return d !== null && d > 0 ? ` · sem contato há ${d}d` : "";
+                          // Só usa contato real — editar o lead não conta como falar com o aluno
+                          if (!lead.lastContactAt) return " · nunca contatado";
+                          const d = daysSince(lead.lastContactAt);
+                          return d !== null && d > 0 ? ` · sem contato há ${d}d` : " · contatado hoje";
                         })()}
                       </p>
                     </div>

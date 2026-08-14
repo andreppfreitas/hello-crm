@@ -9,6 +9,9 @@ import { Copy, Check, MessageCircle, Mail, X, Sparkles, ChevronRight } from "luc
 import { Button } from "@/components/ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
+import { useCRM } from "@/contexts/CRMContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { logContact, contactSummary } from "@/lib/contact-log";
 
 interface TemplateDrawerProps {
   lead: Lead;
@@ -24,7 +27,7 @@ function buildMessage(template: string, lead: Lead): string {
     .replace(/{consultant}/g, lead.assignedConsultant.split(" ")[0]);
 }
 
-function TemplateCard({ template, lead }: { template: MessageTemplate; lead: Lead }) {
+function TemplateCard({ template, lead, onSent }: { template: MessageTemplate; lead: Lead; onSent: (label: string, text: string) => void }) {
   const [copied, setCopied] = useState(false);
   const body = buildMessage(template.body, lead);
   const subject = template.subject ? buildMessage(template.subject, lead) : undefined;
@@ -42,6 +45,15 @@ function TemplateCard({ template, lead }: { template: MessageTemplate; lead: Lea
     const raw = lead.phone.replace(/\D/g, "");
     const phone = raw.startsWith("55") ? raw : `55${raw}`;
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(body)}`, "_blank");
+    onSent(template.label, body);
+  }
+
+  function openEmail() {
+    window.open(
+      `mailto:${lead.email}?subject=${encodeURIComponent(subject ?? "")}&body=${encodeURIComponent(body)}`,
+      "_blank"
+    );
+    onSent(template.label, subject || body);
   }
 
   return (
@@ -64,11 +76,21 @@ function TemplateCard({ template, lead }: { template: MessageTemplate; lead: Lea
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
           </button>
-          {template.channel === "whatsapp" && (
+          {template.channel === "whatsapp" ? (
             <button
               onClick={openWhatsApp}
-              className="p-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 transition-colors"
+              disabled={!lead.phone}
+              className="p-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               title="Abrir no WhatsApp"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <button
+              onClick={openEmail}
+              disabled={!lead.email}
+              className="p-1.5 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Abrir e-mail"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -90,6 +112,14 @@ function TemplateCard({ template, lead }: { template: MessageTemplate; lead: Lea
 export function TemplateDrawer({ lead, open, onClose }: TemplateDrawerProps) {
   const [filter, setFilter] = useState<"all" | "whatsapp" | "email">("all");
   const [customTemplates, setCustomTemplates] = useState<CustomTemplate[]>([]);
+  const { updateLead } = useCRM();
+  const { user } = useAuth();
+
+  function handleSent(channel: "whatsapp" | "email", label: string, text: string) {
+    const author = user?.displayName ?? lead.assignedConsultant;
+    updateLead(lead.id, logContact(lead, channel, contactSummary(channel, label, text), author));
+    toast.success("Contato registrado no histórico");
+  }
 
   useEffect(() => {
     if (open) {
@@ -175,7 +205,12 @@ export function TemplateDrawer({ lead, open, onClose }: TemplateDrawerProps) {
                 <p className="text-sm text-muted-foreground text-center py-8">Nenhum template para este filtro.</p>
               )}
               {filtered.map((template, i) => (
-                <TemplateCard key={i} template={template} lead={lead} />
+                <TemplateCard
+                  key={i}
+                  template={template}
+                  lead={lead}
+                  onSent={(label, text) => handleSent(template.channel, label, text)}
+                />
               ))}
             </div>
           </motion.div>

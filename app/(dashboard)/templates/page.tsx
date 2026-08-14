@@ -7,6 +7,8 @@ import type { Lead, CustomTemplate, PipelineStage } from "@/types";
 import { MessageCircle, Mail, Copy, Search, X, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { logContact, contactSummary } from "@/lib/contact-log";
 
 type Channel = "whatsapp" | "email";
 
@@ -20,17 +22,7 @@ function fillTemplate(body: string, lead: Lead | null): string {
     .replace(/\{city\}/g, lead.currentCity ?? lead.preferredCity ?? "Australia");
 }
 
-function sendWhatsApp(lead: Lead, text: string) {
-  const raw = lead.phone.replace(/\D/g, "");
-  const phone = raw.startsWith("55") ? raw : `55${raw}`;
-  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
-}
-
-function sendEmail(lead: Lead, subject: string, text: string) {
-  window.open(`mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`, "_blank");
-}
-
-function TemplateCard({ tpl, lead, channel }: { tpl: { label: string; subject?: string; body: string }; lead: Lead | null; channel: Channel }) {
+function TemplateCard({ tpl, lead, channel, onSent }: { tpl: { label: string; subject?: string; body: string }; lead: Lead | null; channel: Channel; onSent: (lead: Lead, label: string, text: string) => void }) {
   const isWa = channel === "whatsapp";
   const body = fillTemplate(tpl.body, lead);
   const subject = tpl.subject ? fillTemplate(tpl.subject, lead) : "";
@@ -42,8 +34,14 @@ function TemplateCard({ tpl, lead, channel }: { tpl: { label: string; subject?: 
 
   function send() {
     if (!lead) return;
-    if (isWa) sendWhatsApp(lead, body);
-    else sendEmail(lead, subject, body);
+    if (isWa) {
+      const raw = lead.phone.replace(/\D/g, "");
+      const phone = raw.startsWith("55") ? raw : `55${raw}`;
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(body)}`, "_blank");
+    } else {
+      window.open(`mailto:${lead.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, "_blank");
+    }
+    onSent(lead, tpl.label, subject || body);
   }
 
   return (
@@ -74,7 +72,8 @@ function TemplateCard({ tpl, lead, channel }: { tpl: { label: string; subject?: 
 }
 
 export default function TemplatesPage() {
-  const { leads } = useCRM();
+  const { leads, updateLead } = useCRM();
+  const { user } = useAuth();
   const [channel, setChannel] = useState<Channel>("whatsapp");
   const [leadQuery, setLeadQuery] = useState("");
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
@@ -93,6 +92,15 @@ export default function TemplatesPage() {
 
   const isWa = channel === "whatsapp";
   const customFiltered = customTemplates.filter((t) => t.channel === channel);
+
+  // Registra o contato no lead. Relê o lead da lista para não sobrescrever o
+  // histórico com um snapshot velho quando se dispara vários templates seguidos.
+  function handleSent(target: Lead, label: string, text: string) {
+    const fresh = leads.find((l) => l.id === target.id) ?? target;
+    const author = user?.displayName ?? fresh.assignedConsultant;
+    updateLead(fresh.id, logContact(fresh, channel, contactSummary(channel, label, text), author));
+    toast.success("Contato registrado no histórico do aluno");
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-5">
@@ -177,7 +185,7 @@ export default function TemplatesPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {customFiltered.map((t) => (
-              <TemplateCard key={t.id} tpl={t} lead={selectedLead} channel={channel} />
+              <TemplateCard key={t.id} tpl={t} lead={selectedLead} channel={channel} onSent={handleSent} />
             ))}
           </div>
         </div>
@@ -203,7 +211,7 @@ export default function TemplatesPage() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider pl-1">{STAGE_CONFIG[stage].label}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {templates.map((t, i) => (
-                    <TemplateCard key={`${stage}-${i}`} tpl={t} lead={selectedLead} channel={channel} />
+                    <TemplateCard key={`${stage}-${i}`} tpl={t} lead={selectedLead} channel={channel} onSent={handleSent} />
                   ))}
                 </div>
               </div>

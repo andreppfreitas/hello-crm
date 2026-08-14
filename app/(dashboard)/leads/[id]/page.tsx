@@ -122,7 +122,14 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
       createdAt: now,
       type: noteType,
     };
-    updateLead(lead.id, { notesList: [note, ...lead.notesList] });
+    // Notas de ligação/WhatsApp/e-mail/reunião contam como contato real com o aluno;
+    // "note" é anotação interna e não mexe no lastContactAt. Só a data é atualizada —
+    // a própria nota já entra na timeline, então não duplicamos em contactHistory.
+    const isContact = noteType !== "note";
+    updateLead(lead.id, {
+      notesList: [note, ...lead.notesList],
+      ...(isContact ? { lastContactAt: now } : {}),
+    });
     // Auto-create reminder from note
     const dueAt = new Date();
     dueAt.setDate(dueAt.getDate() + 1);
