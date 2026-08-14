@@ -7,6 +7,7 @@ import {
   leadCommission, billableEnrollments, formatAUD, PHASE_PROBABILITY,
 } from "@/lib/commission";
 import { STAGE_CONFIG, PHASE_CONFIG } from "@/lib/constants";
+import type { Lead } from "@/types";
 import { cn } from "@/lib/utils";
 import { Wallet, TrendingUp, FileText, CircleAlert, School } from "lucide-react";
 import {
@@ -16,7 +17,12 @@ import {
 const TOOLTIP_STYLE = { background: "#1e2a3a", border: "1px solid #334155", borderRadius: 8, fontSize: 12 };
 
 export default function ReceitaPage() {
-  const { leads: allLeads } = useCRM();
+  const { leads } = useCRM();
+  return <ReceitaView leads={leads} />;
+}
+
+/** Separado do hook para poder ser renderizado com dados controlados. */
+export function ReceitaView({ leads: allLeads }: { leads: Lead[] }) {
   // Uma oportunidade por grupo — membros de família/casal não contam em dobro
   const leads = allLeads.filter((l) => !l.groupId || l.groupRole === "primary");
 
