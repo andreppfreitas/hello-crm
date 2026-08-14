@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCRM } from "@/contexts/CRMContext";
 import { PHASE_ORDER, PHASE_CONFIG, STAGE_CONFIG, CITIES, CONSULTANTS } from "@/lib/constants";
 import {
@@ -213,6 +214,48 @@ export default function ReportsPage() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Em processo de visto — acompanhamento, não ação (por isso não fica no dashboard) */}
+      {(() => {
+        const now = Date.now();
+        const inVisa = leads
+          .filter((l) => STAGE_CONFIG[l.stage]?.phase === "visa")
+          .map((l) => {
+            const entry = l.stageHistory?.find((h) => h.stage === l.stage && !h.exitedAt);
+            const days = entry ? Math.floor((now - new Date(entry.enteredAt).getTime()) / 86400000) : null;
+            return { lead: l, days };
+          })
+          .sort((a, b) => (b.days ?? 0) - (a.days ?? 0));
+        if (inVisa.length === 0) return null;
+        return (
+          <div className="glass-card rounded-xl p-5 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h3 className="text-sm font-semibold">🛂 Em processo de visto</h3>
+              <span className="text-xs text-muted-foreground">{inVisa.length} estudante(s) · ordenados por tempo de espera</span>
+            </div>
+            <div className="space-y-1">
+              {inVisa.map(({ lead, days }) => (
+                <Link key={lead.id} href={`/leads/${lead.id}`}>
+                  <div className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg hover:bg-white/5 transition-colors">
+                    <div className="min-w-0">
+                      <p className="text-sm text-foreground truncate">{lead.fullName}</p>
+                      <p className="text-xs text-muted-foreground truncate">{STAGE_CONFIG[lead.stage]?.label}</p>
+                    </div>
+                    {days !== null && (
+                      <span className={cn(
+                        "text-xs flex-shrink-0 font-medium",
+                        days > 60 ? "text-red-400" : days > 30 ? "text-amber-400" : "text-muted-foreground"
+                      )}>
+                        {days}d aguardando
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Cursos e escolas — vindos do antigo dashboard */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
