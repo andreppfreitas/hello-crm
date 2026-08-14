@@ -7,12 +7,14 @@ import type { Lead, Reminder } from "@/types";
 import { buildWorkQueue, queueCounts, KIND_LABEL, nextStage, type QueueKind, type QueueItem } from "@/lib/work-queue";
 import { STAGE_CONFIG } from "@/lib/constants";
 import { logContact } from "@/lib/contact-log";
+import { advanceChain } from "@/lib/task-chain";
 import { useCRM } from "@/contexts/CRMContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { MessageCircle, ChevronRight, Check } from "lucide-react";
 
 const KIND_STYLE: Record<QueueKind, string> = {
+  step: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
   reminder: "bg-primary/15 text-primary border-primary/30",
   visa: "bg-amber-500/15 text-amber-300 border-amber-500/30",
   stuck: "bg-orange-500/15 text-orange-300 border-orange-500/30",
@@ -56,6 +58,31 @@ export function WorkQueue({ leads, reminders, onCompleteReminder }: Props) {
   function complete(item: QueueItem) {
     const lead = leads.find((l) => l.id === item.leadId);
     const author = user?.displayName ?? lead?.assignedConsultant ?? "Sistema";
+
+    if (item.kind === "step" && lead && item.taskId) {
+      // Conclui o passo e já abre o próximo da etapa
+      const { tasks, next, stageComplete } = advanceChain(lead, item.taskId);
+      updateLead(lead.id, { ...logContact(lead, "call", `Concluído: ${item.task}`, author), tasks });
+      if (next) {
+        toast.success("Passo concluído", { description: `Próximo: ${next.title}` });
+        return;
+      }
+      if (stageComplete) {
+        const ns = nextStage(lead.stage);
+        toast.success(`${STAGE_CONFIG[lead.stage].label} concluída`, {
+          description: ns ? `Próxima etapa: ${STAGE_CONFIG[ns].label}` : "Fim do processo 🎉",
+          action: ns ? {
+            label: "Avançar",
+            onClick: () => {
+              updateLead(lead.id, { stage: ns });
+              toast.success(`${lead.fullName.split(" ")[0]} movido para ${STAGE_CONFIG[ns].label}`);
+            },
+          } : undefined,
+          duration: 8000,
+        });
+      }
+      return;
+    }
 
     if (item.kind === "reminder") {
       onCompleteReminder?.(item.id.replace(/^rem-/, ""));

@@ -4,7 +4,8 @@
 import type { Lead, Task, Note, ContactEvent, Payment, StageHistoryEntry } from "@/types";
 import type { PipelineStage } from "@/types";
 import { buildVisaChecklist } from "./visa-defaults";
-import { CONSULTANTS, STAGE_CONFIG, TASK_TEMPLATES } from "./constants";
+import { CONSULTANTS, STAGE_CONFIG, TASK_TEMPLATES, STAGE_BEHAVIOR_CONFIG } from "./constants";
+import { firstChainTask } from "./task-chain";
 
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10);
@@ -42,10 +43,16 @@ export function buildNewLead(
   idOverride?: string
 ): Lead {
   const id = idOverride ?? `lead-${uid()}`;
+  // Primeiro elo da corrente: o lead já nasce com um passo aberto, senão ele
+  // fica invisível na fila de trabalho até completar dias sem contato.
+  const firstStep = firstChainTask(data.stage);
+  const behavior = STAGE_BEHAVIOR_CONFIG[data.stage];
   return {
     ...data,
     id,
-    tasks: [],
+    nextAction: data.nextAction ?? behavior?.defaultNextAction ?? null,
+    waitingFor: data.waitingFor ?? behavior?.defaultWaitingFor ?? null,
+    tasks: firstStep ? [firstStep] : [],
     contactHistory: [],
     payments: [],
     documents: [],

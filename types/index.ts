@@ -101,7 +101,9 @@ export interface Task {
   completedAt?: string;
   comment?: string;
   stage: PipelineStage;
-  auto?: boolean; // virtual task derived from missing lead data — not stored in DB
+  auto?: boolean;       // virtual task derived from missing lead data — not stored in DB
+  chain?: boolean;      // passo da corrente do processo — ao concluir, o próximo nasce
+  stepIndex?: number;   // posição na sequência da etapa
 }
 
 export interface Note {

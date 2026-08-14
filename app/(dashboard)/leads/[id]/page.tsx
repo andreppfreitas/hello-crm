@@ -12,6 +12,8 @@ import { getAutoTasks, getAutoTaskDef } from "@/lib/auto-tasks";
 import { useAuth } from "@/contexts/AuthContext";
 import { enrollmentCommission, formatAUD } from "@/lib/commission";
 import { PaymentsTab } from "@/components/leads/PaymentsTab";
+import { advanceChain, chainProgress } from "@/lib/task-chain";
+import { nextStage } from "@/lib/work-queue";
 import { notFound, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -107,6 +109,25 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
 
   function handleTaskToggle(taskId: string) {
     if (!lead) return;
+    const task = lead.tasks.find((t) => t.id === taskId);
+
+    // Concluir um passo da corrente já abre o próximo da etapa
+    if (task?.chain && !task.completed) {
+      const { tasks, next, stageComplete } = advanceChain(lead, taskId);
+      updateLead(lead.id, { tasks });
+      if (next) {
+        toast.success("Passo concluído", { description: `Próximo: ${next.title}` });
+      } else if (stageComplete) {
+        const ns = nextStage(lead.stage);
+        toast.success(`Todos os passos de ${STAGE_CONFIG[lead.stage].label} concluídos`, {
+          description: ns ? `Próxima etapa: ${STAGE_CONFIG[ns].label}` : "Fim do processo 🎉",
+          action: ns ? { label: "Avançar", onClick: () => updateLead(lead.id, { stage: ns }) } : undefined,
+          duration: 8000,
+        });
+      }
+      return;
+    }
+
     updateLead(lead.id, {
       tasks: lead.tasks.map((t) =>
         t.id === taskId

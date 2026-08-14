@@ -1,5 +1,6 @@
 import type { Lead, Reminder, NextAction, PipelineStage } from "@/types";
 import { STAGE_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG, PHASE_ORDER, PHASE_CONFIG } from "./constants";
+import { openChainTask, chainProgress } from "./task-chain";
 
 /**
  * Fila única de trabalho do consultor.
@@ -10,7 +11,7 @@ import { STAGE_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG, PHASE_ORDER, PHAS
  * por urgência, com o motivo explícito em cada linha.
  */
 
-export type QueueKind = "reminder" | "visa" | "stuck" | "action" | "silent";
+export type QueueKind = "step" | "reminder" | "visa" | "stuck" | "action" | "silent";
 
 export interface QueueItem {
   id: string;
@@ -25,9 +26,12 @@ export interface QueueItem {
   reason: string;
   urgency: number;
   overdue: boolean;
+  /** Id da task, quando o item vem de um passo da corrente. */
+  taskId?: string;
 }
 
 export const KIND_LABEL: Record<QueueKind, string> = {
+  step: "Passos do processo",
   reminder: "Lembretes",
   visa: "Vistos",
   stuck: "Travados",
@@ -112,6 +116,27 @@ export function buildWorkQueue(leads: Lead[], reminders: Reminder[], now = Date.
     const touched = lastTouch(lead);
     const silentDays = touched ? daysBetween(touched, now) : 0;
 
+    // 3. Passo aberto da corrente do processo — é o "o que fazer" mais concreto
+    // que existe, então substitui travado/próxima ação/silêncio.
+    const step = openChainTask(lead);
+    if (step) {
+      const { done, total } = chainProgress(lead);
+      items.push({
+        id: `step-${lead.id}`,
+        leadId: lead.id,
+        leadName: lead.fullName,
+        phone: lead.phone,
+        kind: "step",
+        icon: "✅",
+        task: step.title,
+        reason: `${STAGE_CONFIG[lead.stage]?.label} · passo ${Math.min(done + 1, total)}/${total}`,
+        urgency: 45 + Math.min(silentDays, 25),
+        overdue: silentDays > 14,
+        taskId: step.id,
+      });
+      continue;
+    }
+
     // 3. Travado esperando terceiro
     if (lead.waitingFor && silentDays > 3) {
       const cfg = WAITING_FOR_CONFIG[lead.waitingFor];
@@ -182,7 +207,7 @@ export function nextStage(current: PipelineStage): PipelineStage | null {
 }
 
 export function queueCounts(items: QueueItem[]): Record<QueueKind, number> {
-  const counts = { reminder: 0, visa: 0, stuck: 0, action: 0, silent: 0 };
+  const counts = { step: 0, reminder: 0, visa: 0, stuck: 0, action: 0, silent: 0 };
   for (const i of items) counts[i.kind] += 1;
   return counts;
 }
