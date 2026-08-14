@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { STAGE_TEMPLATES } from "@/lib/constants";
-import type { Lead } from "@/types";
+import { useState, useEffect, useMemo } from "react";
+import { STAGE_TEMPLATES, PHASE_ORDER, PHASE_CONFIG, STAGE_CONFIG } from "@/lib/constants";
+import type { Lead, PhaseGroup, PipelineStage } from "@/types";
 import { X, MessageCircle, Mail, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,22 +26,32 @@ function fillTemplate(body: string, lead: Lead): string {
 type Channel = "whatsapp" | "email";
 
 export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
+  const currentPhase = STAGE_CONFIG[lead.stage]?.phase ?? "leads";
   const [channel, setChannel] = useState<Channel>("whatsapp");
-  const templates = (STAGE_TEMPLATES[lead.stage] ?? []).filter((t) => t.channel === channel);
+  const [phase, setPhase] = useState<PhaseGroup>(currentPhase);
   // null = sem template (mensagem livre / abrir conversa em branco)
-  const [selected, setSelected] = useState<number | null>(null);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [text, setText] = useState("");
   const [subject, setSubject] = useState("");
 
-  function applyTemplate(idx: number | null, ch: Channel) {
-    setSelected(idx);
-    if (idx === null) {
+  // Todos os templates da categoria escolhida, no canal escolhido
+  const templates = useMemo(() => {
+    const stages = (PHASE_CONFIG[phase]?.stages ?? []) as PipelineStage[];
+    return stages.flatMap((stage) =>
+      (STAGE_TEMPLATES[stage] ?? [])
+        .filter((t) => t.channel === channel)
+        .map((t, i) => ({ ...t, key: `${stage}-${i}`, stage, stageLabel: STAGE_CONFIG[stage].label }))
+    );
+  }, [phase, channel]);
+
+  function applyTemplate(key: string | null) {
+    setSelectedKey(key);
+    if (key === null) {
       setText("");
       setSubject("");
       return;
     }
-    const list = (STAGE_TEMPLATES[lead.stage] ?? []).filter((t) => t.channel === ch);
-    const t = list[idx];
+    const t = templates.find((x) => x.key === key);
     setText(t ? fillTemplate(t.body, lead) : "");
     setSubject(t?.subject ? fillTemplate(t.subject, lead) : "");
   }
@@ -49,16 +59,30 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
   useEffect(() => {
     if (isOpen) {
       setChannel("whatsapp");
-      applyTemplate(null, "whatsapp");
+      setPhase(currentPhase);
+      setSelectedKey(null);
+      setText("");
+      setSubject("");
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, lead.id]);
 
   if (!isOpen) return null;
 
+  function reset() {
+    setSelectedKey(null);
+    setText("");
+    setSubject("");
+  }
+
   function switchChannel(ch: Channel) {
     setChannel(ch);
-    applyTemplate(null, ch);
+    reset();
+  }
+
+  function switchPhase(p: PhaseGroup) {
+    setPhase(p);
+    reset();
   }
 
   function send() {
@@ -84,11 +108,11 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-full max-w-lg glass-card rounded-2xl border border-border shadow-2xl overflow-hidden"
+        className="relative w-full max-w-lg max-h-[90vh] flex flex-col glass-card rounded-2xl border border-border shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
           <div className="flex items-center gap-2.5">
             <div className={cn("w-8 h-8 rounded-full flex items-center justify-center", isWa ? "bg-emerald-500/20" : "bg-blue-500/20")}>
               {isWa ? <MessageCircle className="w-4 h-4 text-emerald-400" /> : <Mail className="w-4 h-4 text-blue-400" />}
@@ -105,7 +129,7 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
           </button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Channel tabs */}
           <div className="flex gap-2">
             <button
@@ -132,37 +156,70 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
             </button>
           </div>
 
+          {/* Categoria (fase do pipeline) */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Categoria</p>
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+              {PHASE_ORDER.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => switchPhase(p)}
+                  className={cn(
+                    "text-xs px-3 py-1.5 rounded-lg border whitespace-nowrap flex-shrink-0 transition-colors",
+                    phase === p
+                      ? `${PHASE_CONFIG[p].headerBg} ${PHASE_CONFIG[p].color}`
+                      : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {PHASE_CONFIG[p].label}
+                  {p === currentPhase && <span className="ml-1.5 text-[9px] opacity-70">• atual</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Template selector */}
           <div className="space-y-1.5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {hasTemplates ? "Escolha um template" : "Sem template para este estágio"}
+              Templates {hasTemplates && <span className="normal-case font-normal">({templates.length})</span>}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="space-y-1 max-h-44 overflow-y-auto scrollbar-thin pr-1">
               <button
-                onClick={() => applyTemplate(null, channel)}
+                onClick={() => applyTemplate(null)}
                 className={cn(
-                  "text-xs px-3 py-1.5 rounded-lg border transition-colors",
-                  selected === null
+                  "w-full text-left text-xs px-3 py-2 rounded-lg border transition-colors",
+                  selectedKey === null
                     ? "bg-primary/15 border-primary/30 text-primary"
                     : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground"
                 )}
               >
-                ✏️ Sem template
+                ✏️ Sem template — escrever do zero
               </button>
-              {templates.map((t, i) => (
+              {!hasTemplates && (
+                <p className="text-xs text-muted-foreground italic px-3 py-2">
+                  Nenhum template de {isWa ? "WhatsApp" : "e-mail"} nesta categoria.
+                </p>
+              )}
+              {templates.map((t) => (
                 <button
-                  key={i}
-                  onClick={() => applyTemplate(i, channel)}
+                  key={t.key}
+                  onClick={() => applyTemplate(t.key)}
                   className={cn(
-                    "text-xs px-3 py-1.5 rounded-lg border transition-colors",
-                    selected === i
+                    "w-full text-left px-3 py-2 rounded-lg border transition-colors",
+                    selectedKey === t.key
                       ? isWa
-                        ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
-                        : "bg-blue-500/15 border-blue-500/30 text-blue-300"
-                      : "bg-secondary/50 border-border text-muted-foreground hover:text-foreground"
+                        ? "bg-emerald-500/15 border-emerald-500/30"
+                        : "bg-blue-500/15 border-blue-500/30"
+                      : "bg-secondary/50 border-border hover:bg-white/5"
                   )}
                 >
-                  {t.label}
+                  <p className={cn(
+                    "text-xs font-medium",
+                    selectedKey === t.key ? (isWa ? "text-emerald-300" : "text-blue-300") : "text-foreground"
+                  )}>
+                    {t.label}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground truncate">{t.stageLabel}</p>
                 </button>
               ))}
             </div>
@@ -199,7 +256,7 @@ export function WhatsAppTemplateModal({ lead, isOpen, onClose }: Props) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border bg-secondary/20">
+        <div className="flex items-center justify-end gap-3 px-5 py-4 border-t border-border bg-secondary/20 flex-shrink-0">
           <button
             onClick={onClose}
             className="h-9 px-4 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
