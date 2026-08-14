@@ -253,6 +253,7 @@ function LeadsInner() {
   const [filterStage, setFilterStage] = useState<PipelineStage | "">("");
   const [filterConsultant, setFilterConsultant] = useState(searchParams.get("consultant") ?? "");
   const [filterCity, setFilterCity] = useState("");
+  const [filterOrigin, setFilterOrigin] = useState<"hello" | "study" | "">("");
   const [filterCourse, setFilterCourse] = useState("");
   const [filterNextAction, setFilterNextAction] = useState<NextAction | "">((searchParams.get("nextAction") ?? "") as NextAction | "");
   const [sortField, setSortField] = useState<"createdAt" | "fullName" | "temperature" | "score" | "visaExpiryDate">("createdAt");
@@ -287,6 +288,7 @@ function LeadsInner() {
     }
     if (filterConsultant) list = list.filter((l) => l.assignedConsultant === filterConsultant);
     if (filterCity) list = list.filter((l) => l.currentCity?.toLowerCase().includes(filterCity.toLowerCase()));
+    if (filterOrigin) list = list.filter((l) => (filterOrigin === "study" ? l.isHelloStudent === false : l.isHelloStudent !== false));
     if (filterCourse) list = list.filter((l) => l.courseInterest?.includes(filterCourse));
     if (filterNextAction) list = list.filter((l) => l.nextAction === filterNextAction);
     list.sort((a, b) => {
@@ -305,9 +307,9 @@ function LeadsInner() {
       return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
     });
     return list;
-  }, [scored, search, filterTemp, filterStage, filterConsultant, filterCity, filterCourse, sortField, sortDir]);
+  }, [scored, search, filterTemp, filterStage, filterConsultant, filterCity, filterOrigin, filterCourse, sortField, sortDir]);
 
-  const activeFilters = [filterTemp, filterStage, filterConsultant, filterCity, filterCourse, filterNextAction].filter(Boolean).length;
+  const activeFilters = [filterTemp, filterStage, filterConsultant, filterCity, filterOrigin, filterCourse, filterNextAction].filter(Boolean).length;
   const allSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
 
   function toggleAll() {
@@ -407,6 +409,11 @@ function LeadsInner() {
                 <option value="">{t("consultant")}</option>
                 {CONSULTANTS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+              <select value={filterOrigin} onChange={(e) => setFilterOrigin(e.target.value as "hello" | "study" | "")} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
+                <option value="">Origem</option>
+                <option value="hello">🎓 Aluno Hello</option>
+                <option value="study">🔗 Hello Study</option>
+              </select>
               <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
                 <option value="">Cidade atual</option>
                 {cityOptions.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -423,7 +430,7 @@ function LeadsInner() {
                   ))}
                 </select>
                 {activeFilters > 0 && (
-                  <Button variant="ghost" size="icon" onClick={() => { setFilterTemp(""); setFilterStage(""); setFilterConsultant(""); setFilterCity(""); setFilterCourse(""); setFilterNextAction(""); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setFilterTemp(""); setFilterStage(""); setFilterConsultant(""); setFilterCity(""); setFilterOrigin(""); setFilterCourse(""); setFilterNextAction(""); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 )}
@@ -552,7 +559,14 @@ function LeadsInner() {
                         {initials(lead.fullName)}
                       </div>
                       <div>
-                        <EditableName lead={lead} onSave={(v) => updateLead(lead.id, { fullName: v })} />
+                        <div className="flex items-center gap-1.5">
+                          <EditableName lead={lead} onSave={(v) => updateLead(lead.id, { fullName: v })} />
+                          {lead.isHelloStudent === false && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-300 border border-violet-500/30 flex-shrink-0">
+                              Hello Study
+                            </span>
+                          )}
+                        </div>
                         {groupMembers.length > 0 && (
                           <div className="flex items-center gap-1 mt-0.5">
                             <span className="text-xs">{groupLabel}</span>

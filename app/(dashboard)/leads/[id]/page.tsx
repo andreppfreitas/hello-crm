@@ -391,6 +391,23 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
           {/* CRM info */}
           <div className="glass-card rounded-xl p-4 space-y-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">CRM</h3>
+            <div className="flex gap-2">
+              {([
+                { value: true,  label: "🎓 Aluno Hello", cls: "bg-primary/15 border-primary/50 text-primary" },
+                { value: false, label: "🔗 Hello Study", cls: "bg-violet-500/20 border-violet-500/50 text-violet-300" },
+              ]).map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  onClick={() => updateLead(lead.id, { isHelloStudent: opt.value })}
+                  className={cn(
+                    "flex-1 py-1.5 rounded-lg text-xs font-medium border transition-colors",
+                    (lead.isHelloStudent ?? true) === opt.value ? opt.cls : "bg-secondary/30 border-border text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
             <EditableSelect icon={User} value={lead.assignedConsultant} options={CONSULTANTS} onSave={(v) => updateLead(lead.id, { assignedConsultant: v })} />
             <EditableSelect icon={MessageSquare} value={lead.source} options={["Facebook Group","Instagram","Referral","Website","WhatsApp","Walk-in","Event","LinkedIn","Other"]} onSave={(v) => updateLead(lead.id, { source: v })} />
             <InfoRow icon={Calendar} label={`Adicionado ${formatDate(lead.createdAt, "relative")}`} />

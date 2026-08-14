@@ -42,10 +42,11 @@ export default function NewLeadPage() {
     temperature: "warm" as LeadTemperature,
     stage: "new_lead" as PipelineStage,
     assignedConsultant: CONSULTANTS[0],
+    isHelloStudent: true,
     notes: "",
   });
 
-  function set(field: string, value: string) {
+  function set(field: string, value: string | boolean) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
@@ -92,6 +93,26 @@ export default function NewLeadPage() {
         </Section>
 
         <Section title="CRM Details">
+          <Field label="Origem do aluno" full>
+            <div className="flex gap-2">
+              {([
+                { value: true,  label: "🎓 Aluno Hello",  cls: "bg-primary/15 border-primary/50 text-primary" },
+                { value: false, label: "🔗 Hello Study",  cls: "bg-violet-500/20 border-violet-500/50 text-violet-300" },
+              ]).map((opt) => (
+                <button
+                  key={String(opt.value)}
+                  type="button"
+                  onClick={() => set("isHelloStudent", opt.value)}
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-sm font-medium border transition-colors",
+                    form.isHelloStudent === opt.value ? opt.cls : "bg-secondary/50 border-border text-muted-foreground"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </Field>
           <Field label="Lead Source">
             <select value={form.source} onChange={(e) => set("source", e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
               {SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}

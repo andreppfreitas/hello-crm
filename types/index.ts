@@ -169,6 +169,7 @@ export interface Lead {
   preferredCity?: string;
   budget?: string;
   // CRM
+  isHelloStudent?: boolean;      // true = aluno Hello | false = veio pela Hello Study
   source: LeadSource | string;
   temperature: LeadTemperature;
   stage: PipelineStage;

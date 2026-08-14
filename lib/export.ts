@@ -4,7 +4,7 @@ import { computeScore } from "./scoring";
 
 const HEADERS = [
   "Nome", "Email", "Telefone", "País", "Cidade Atual", "Temperatura",
-  "Fase", "Estágio", "Consultor", "Origem", "Cursos", "Escolas", "Score", "Criado em",
+  "Fase", "Estágio", "Consultor", "Aluno Hello", "Origem", "Cursos", "Escolas", "Score", "Criado em",
 ];
 
 function leadRow(l: Lead): string[] {
@@ -20,6 +20,7 @@ function leadRow(l: Lead): string[] {
     stageCfg ? PHASE_CONFIG[stageCfg.phase].label : "",
     stageCfg?.label ?? l.stage,
     l.assignedConsultant,
+    l.isHelloStudent === false ? "Hello Study" : "Aluno Hello",
     l.source,
     enrollments.map((e) => e.course).filter(Boolean).join(" | "),
     enrollments.map((e) => e.school).filter(Boolean).join(" | "),
