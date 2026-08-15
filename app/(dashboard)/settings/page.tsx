@@ -14,6 +14,7 @@ import { useLanguage, type Language } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { SecurityTab } from "@/components/settings/SecurityTab";
 import { StageStepsTab } from "@/components/settings/StageStepsTab";
+import { BackupTab } from "@/components/settings/BackupTab";
 
 const SECTIONS_PT = ["Perfil", "Segurança", "Usuários", "Agência", "Processo", "Notificações", "Aparência", "Templates", "Dados"] as const;
 const SECTIONS_EN = ["Profile", "Security", "Users", "Agency", "Process", "Notifications", "Appearance", "Templates", "Data"] as const;
@@ -641,14 +642,13 @@ export default function SettingsPage() {
                   </div>
                 ))}
               </div>
-              <div className="flex gap-3 flex-wrap">
-                <Button variant="outline" size="sm" onClick={() => toast.info(language === "en" ? "Export coming soon" : "Export em breve")}>{t("export")} CSV</Button>
-                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" onClick={() => toast.error(language === "en" ? "Reset cancelled" : "Reset cancelado")}>
-                  Reset {language === "en" ? "Data" : "Dados"}
-                </Button>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Exportação de alunos em Excel, CSV e PDF fica em Relatórios.
+              </p>
             </div>
           )}
+
+          {activeSection === "Dados" && <BackupTab isAdmin={me?.role === "admin"} />}
         </div>
       </div>
     </div>
