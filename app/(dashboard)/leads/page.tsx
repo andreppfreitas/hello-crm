@@ -5,6 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
 import { StageBadge } from "@/components/shared/StageBadge";
 import { formatDate, initials } from "@/lib/utils";
+import { isVisaExpired } from "@/lib/lead-status";
 import { computeScore, scoreColor, scoreBarColor } from "@/lib/scoring";
 import { CONSULTANTS, CITIES, STAGE_CONFIG, PHASE_ORDER, PHASE_CONFIG, NEXT_ACTION_CONFIG, NEXT_ACTION_OPTIONS } from "@/lib/constants";
 import { useState, useMemo, Suspense } from "react";
@@ -254,6 +255,7 @@ function LeadsInner() {
   const [filterConsultant, setFilterConsultant] = useState(searchParams.get("consultant") ?? "");
   const [filterCity, setFilterCity] = useState("");
   const [filterOrigin, setFilterOrigin] = useState<"hello" | "study" | "">("");
+  const [showExpired, setShowExpired] = useState(false);
   const [filterCourse, setFilterCourse] = useState("");
   const [filterNextAction, setFilterNextAction] = useState<NextAction | "">((searchParams.get("nextAction") ?? "") as NextAction | "");
   const [sortField, setSortField] = useState<"createdAt" | "fullName" | "temperature" | "score" | "visaExpiryDate">("createdAt");
@@ -286,6 +288,9 @@ function LeadsInner() {
     if (!filterStage || STAGE_CONFIG[filterStage]?.phase !== "visa") {
       list = list.filter((l) => STAGE_CONFIG[l.stage]?.phase !== "visa");
     }
+    // Visto vencido = aluno fora de status, não é mais um lead viável.
+    // Continua acessível pelo botão "Vistos vencidos" nos filtros.
+    if (!showExpired) list = list.filter((l) => !isVisaExpired(l));
     if (filterConsultant) list = list.filter((l) => l.assignedConsultant === filterConsultant);
     if (filterCity) list = list.filter((l) => l.currentCity?.toLowerCase().includes(filterCity.toLowerCase()));
     if (filterOrigin) list = list.filter((l) => (filterOrigin === "study" ? l.isHelloStudent === false : l.isHelloStudent !== false));
@@ -309,9 +314,11 @@ function LeadsInner() {
       return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
     });
     return list;
-  }, [scored, search, filterTemp, filterStage, filterConsultant, filterCity, filterOrigin, filterCourse, sortField, sortDir]);
+  }, [scored, search, filterTemp, filterStage, filterConsultant, filterCity, filterOrigin, filterCourse, showExpired, sortField, sortDir]);
 
-  const activeFilters = [filterTemp, filterStage, filterConsultant, filterCity, filterOrigin, filterCourse, filterNextAction].filter(Boolean).length;
+  const activeFilters = [filterTemp, filterStage, filterConsultant, filterCity, filterOrigin, filterCourse, filterNextAction].filter(Boolean).length + (showExpired ? 1 : 0);
+  // Quantos estão escondidos por visto vencido — para o botão dizer o tamanho do que oculta
+  const expiredCount = useMemo(() => deduped.filter((l) => isVisaExpired(l)).length, [deduped]);
   const allSelected = filtered.length > 0 && filtered.every((l) => selected.has(l.id));
 
   function toggleAll() {
@@ -416,6 +423,20 @@ function LeadsInner() {
                 <option value="hello">🎓 Aluno Hello</option>
                 <option value="study">🔗 Hello Study</option>
               </select>
+              <button
+                type="button"
+                onClick={() => setShowExpired((v) => !v)}
+                disabled={expiredCount === 0 && !showExpired}
+                className={cn(
+                  "rounded-lg px-3 py-2 text-sm border text-left transition-colors disabled:opacity-40 disabled:cursor-not-allowed",
+                  showExpired
+                    ? "bg-red-500/15 border-red-500/40 text-red-300"
+                    : "bg-secondary border-border text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {showExpired ? "Ocultar" : "Mostrar"} vistos vencidos
+                {expiredCount > 0 && <span className="opacity-60"> ({expiredCount})</span>}
+              </button>
               <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="bg-secondary border border-border rounded-lg px-3 py-2 text-sm text-foreground">
                 <option value="">Cidade atual</option>
                 {cityOptions.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -432,7 +453,7 @@ function LeadsInner() {
                   ))}
                 </select>
                 {activeFilters > 0 && (
-                  <Button variant="ghost" size="icon" onClick={() => { setFilterTemp(""); setFilterStage(""); setFilterConsultant(""); setFilterCity(""); setFilterOrigin(""); setFilterCourse(""); setFilterNextAction(""); }}>
+                  <Button variant="ghost" size="icon" onClick={() => { setFilterTemp(""); setFilterStage(""); setFilterConsultant(""); setFilterCity(""); setFilterOrigin(""); setShowExpired(false); setFilterCourse(""); setFilterNextAction(""); }}>
                     <X className="w-4 h-4" />
                   </Button>
                 )}
