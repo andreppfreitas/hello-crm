@@ -1,42 +1,57 @@
-import type { Quotation, QuotationCourse, QuotationTotals } from "@/types/quotation";
+import type {
+  Quotation, QuotationCourse, CostGroup, QuotationTotals, ScheduledPayment,
+} from "@/types/quotation";
 
-/** Soma as linhas de taxa de um curso (descontos entram negativos). */
+const soma = (ns: number[]) => ns.reduce((s, n) => s + (Number.isFinite(n) ? n : 0), 0);
+
 export function courseTotal(course: QuotationCourse): number {
-  return course.fees.reduce((sum, f) => sum + (Number.isFinite(f.amount) ? f.amount : 0), 0);
+  return soma(course.fees.map((f) => f.amount));
 }
 
-/** Saldo que sobra para parcelar depois da entrada. */
-export function courseRemaining(course: QuotationCourse): number {
-  return Math.max(0, courseTotal(course) - (course.deposit || 0));
+export function groupTotal(group: CostGroup): number {
+  return soma(group.lines.map((l) => l.amount));
 }
 
-/** Quanto o plano de parcelas cobre — serve para conferir contra o saldo. */
-export function installmentsTotal(course: QuotationCourse): number {
-  return course.installments.reduce((s, t) => s + t.count * t.amount, 0);
+export function scheduleTotal(schedule: ScheduledPayment[]): number {
+  return soma(schedule.map((p) => p.amount));
+}
+
+/** Parcelas ordenadas por vencimento. */
+export function sortedSchedule(schedule: ScheduledPayment[]): ScheduledPayment[] {
+  return [...schedule].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || ""));
 }
 
 export function computeTotals(q: Quotation): QuotationTotals {
   const courseTotals = q.courses.map((c) => ({ courseId: c.id, total: courseTotal(c) }));
-  const coursesTotal = courseTotals.reduce((s, c) => s + c.total, 0);
-  const depositTotal = q.courses.reduce((s, c) => s + (c.deposit || 0), 0);
-  const visaTotal = q.visaCosts.reduce((s, v) => s + (Number.isFinite(v.amount) ? v.amount : 0), 0);
-  const remainingTotal = q.courses.reduce((s, c) => s + courseRemaining(c), 0);
+  const groupTotals = q.costGroups.map((g) => ({ groupId: g.id, total: groupTotal(g) }));
+  const coursesTotal = soma(courseTotals.map((c) => c.total));
+  const extrasTotal = soma(groupTotals.map((g) => g.total));
+
+  // "Quanto pago agora" = tudo que vence na primeira data do cronograma.
+  // É a pergunta que o aluno faz primeiro, e o cronograma responde com precisão.
+  const ordenado = sortedSchedule(q.schedule).filter((p) => p.dueDate);
+  const upfrontDate = ordenado[0]?.dueDate;
+  const upfrontTotal = upfrontDate
+    ? soma(ordenado.filter((p) => p.dueDate === upfrontDate).map((p) => p.amount))
+    : 0;
+  const total = scheduleTotal(q.schedule);
 
   return {
     courseTotals,
     coursesTotal,
-    depositTotal,
-    visaTotal,
-    upfrontTotal: depositTotal + visaTotal,
-    remainingTotal,
-    grandTotal: coursesTotal + visaTotal,
+    groupTotals,
+    extrasTotal,
+    grandTotal: coursesTotal + extrasTotal,
+    upfrontTotal,
+    upfrontDate,
+    remainingTotal: Math.max(0, total - upfrontTotal),
+    scheduleTotal: total,
   };
 }
 
 /**
- * Avisos de inconsistência, mostrados ao consultor antes de enviar.
- * A cotação é um documento que o aluno usa para decidir — número errado aqui
- * custa confiança, então vale gritar antes de sair.
+ * Inconsistências que o consultor precisa ver antes de mandar para o aluno.
+ * Cotação é documento de decisão financeira — número errado aqui custa caro.
  */
 export function quotationWarnings(q: Quotation): string[] {
   const avisos: string[] = [];
@@ -47,19 +62,20 @@ export function quotationWarnings(q: Quotation): string[] {
     const nome = c.course || "curso sem nome";
     if (!c.school?.trim()) avisos.push(`${nome}: escola não preenchida.`);
     if (courseTotal(c) <= 0) avisos.push(`${nome}: valor total zerado.`);
-    if (c.deposit > courseTotal(c)) avisos.push(`${nome}: entrada maior que o valor do curso.`);
-
-    const parcelado = installmentsTotal(c);
-    const saldo = courseRemaining(c);
-    // Tolerância de 1 unidade para arredondamento da escola
-    if (parcelado > 0 && Math.abs(parcelado - saldo) > 1) {
-      avisos.push(
-        `${nome}: parcelas somam ${fmt(parcelado, q.currency)} mas o saldo é ${fmt(saldo, q.currency)}.`
-      );
-    }
   }
 
-  if (q.validUntil && new Date(q.validUntil).getTime() < Date.now()) {
+  const t = computeTotals(q);
+  // O cronograma tem que fechar com o valor cotado, senão o aluno paga errado.
+  // 1 unidade de tolerância cobre arredondamento da escola.
+  if (q.schedule.length > 0 && Math.abs(t.scheduleTotal - t.grandTotal) > 1) {
+    avisos.push(
+      `O cronograma soma ${fmt(t.scheduleTotal, q.currency)} mas a cotação é ${fmt(t.grandTotal, q.currency)}.`
+    );
+  }
+  if (q.schedule.some((p) => !p.dueDate)) {
+    avisos.push("Há parcela sem data de vencimento.");
+  }
+  if (q.validUntil && new Date(`${q.validUntil}T23:59:59`).getTime() < Date.now()) {
     avisos.push("A data de validade já passou.");
   }
 
@@ -77,9 +93,9 @@ export function fmt(value: number, currency = "AUD"): string {
   }).format(value).replace(/ /g, " ");
 }
 
-/** Data de fim estimada a partir do início e da duração escrita pela escola. */
+/** Data de fim estimada, usada só quando o PDF não traz a data de término. */
 export function estimateEndDate(startDate: string, durationLabel: string): string | undefined {
-  const start = new Date(startDate);
+  const start = new Date(`${startDate}T12:00:00`);
   if (!Number.isFinite(start.getTime())) return undefined;
 
   const m = /(\d+(?:[.,]\d+)?)\s*(semana|week|m[eê]s|mes|month|ano|year)/i.exec(durationLabel);
@@ -96,7 +112,6 @@ export function estimateEndDate(startDate: string, durationLabel: string): strin
   return fim.toISOString().slice(0, 10);
 }
 
-/** Número sequencial legível: HA-0001. */
 export function formatQuotationNumber(seq: number): string {
   return `HA-${String(seq).padStart(4, "0")}`;
 }

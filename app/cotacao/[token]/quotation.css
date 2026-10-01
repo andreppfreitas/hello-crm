@@ -200,3 +200,48 @@
   }
   .q-summary { background: #fff; }
 }
+
+/* ── Utilitários do documento ───────────────────────────────────────────── */
+.q-min { min-width: 0; }
+.q-mt { margin-top: 18px; }
+.q-mt-sm { margin-top: 6px; }
+.q-mt-xs { margin-top: 2px; }
+.q-pre { white-space: pre-wrap; }
+.q-stack { display: flex; flex-direction: column; gap: 14px; }
+.q-strong { font-weight: 650; color: var(--q-ink); }
+.q-sub { color: var(--q-ink-2); margin: 2px 0 0; }
+.q-detail { font-size: 12.5px; color: var(--q-muted); margin: 2px 0 0; }
+.q-free { color: var(--q-good); font-weight: 600; }
+
+.q-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.q-card-title { font-family: var(--q-display); font-size: 21px; font-weight: 600; margin: 4px 0 0; color: var(--q-ink); text-wrap: balance; }
+.q-card-title-sm { font-size: 18px; margin-top: 0; }
+.q-card-amount { text-align: right; }
+.q-card-total { font-size: 24px; font-weight: 700; color: var(--q-ink); margin: 4px 0 0; font-variant-numeric: tabular-nums; }
+
+.q-chips { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 16px; }
+.q-chips-4 { margin-top: 22px; }
+.q-chip-value { font-size: 14px; font-weight: 500; color: var(--q-ink); margin: 3px 0 0; }
+
+/* Linha de valor: rótulo à esquerda, número alinhado à direita */
+.q-row { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding: 8px 0; border-bottom: 1px solid var(--q-line); }
+.q-row:last-child { border-bottom: 0; }
+.q-row-main { min-width: 0; }
+.q-row-main p { margin: 0; color: var(--q-ink-2); }
+.q-amount { margin: 0; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--q-ink-2); }
+.q-row-sub { padding: 5px 0 5px 14px; border-bottom: 0; }
+.q-row-sub .q-row-main p, .q-row-sub .q-amount { font-size: 13.5px; }
+
+/* Cronograma: a linha do tempo é a informação, não enfeite */
+.q-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.q-timeline li { position: relative; padding: 0 0 18px 26px; border-left: 2px solid var(--q-line); }
+.q-timeline li:last-child { padding-bottom: 0; border-left-color: transparent; }
+.q-timeline-dot { position: absolute; left: -7px; top: 16px; width: 12px; height: 12px; border-radius: 50%; background: var(--q-surface); border: 2px solid var(--q-line); }
+.q-timeline-first > .q-timeline-dot { background: var(--q-accent); border-color: var(--q-accent); }
+.q-timeline-body { background: var(--q-surface); border: 1px solid var(--q-line); border-radius: 12px; padding: 12px 16px; }
+.q-timeline-first > .q-timeline-body { border-color: var(--q-warn-line); background: var(--q-accent-soft); }
+
+@media (max-width: 520px) {
+  .q-card-amount { text-align: left; }
+  .q-timeline li { padding-left: 18px; }
+}

@@ -1,39 +1,50 @@
 /**
  * Cotação do aluno.
  *
- * O 1Enrol gera um PDF cru; aqui ele vira dado estruturado para montar a versão
- * explicada que o aluno recebe por link. Os valores ficam em centavos? Não —
- * em unidades da moeda, como número, porque é assim que a escola cota.
+ * O modelo acompanha o que o 1Enrol realmente emite: blocos de curso, grupos de
+ * custo (Visto, Seguro Saúde, Outros) e um cronograma de pagamentos com datas
+ * reais — e não um parcelamento genérico.
  */
 
 export interface FeeLine {
-  label: string;   // "Tuition", "Material Fee", "Enrolment Fee"
+  label: string;   // "Valor do Curso", "Taxa de Material"
+  detail?: string; // "1 × AUD 1.700,00"
   amount: number;  // negativo = desconto
-}
-
-export interface InstallmentTier {
-  count: number;   // quantas parcelas
-  amount: number;  // valor de cada uma
 }
 
 export interface QuotationCourse {
   id: string;
   school: string;
   course: string;
-  durationLabel: string;        // "24 semanas", "2 anos" — como a escola escreve
+  location?: string;            // "Sydney, New South Wales, Australia"
+  cricos?: string;              // código CRICOS da escola
+  durationLabel: string;        // "88 semanas"
   startDate?: string;           // YYYY-MM-DD
   endDate?: string;
   fees: FeeLine[];
-  /** Entrada necessária para a escola emitir o CoE. */
-  deposit: number;
-  /** Parcelamento do saldo restante. */
-  installments: InstallmentTier[];
-  installmentNote?: string;     // "aprox. a cada 4 semanas"
 }
 
-export interface VisaCostLine {
-  label: string;    // "Taxa do visto de estudante", "OSHC"
-  detail?: string;  // "33 meses", "1 pessoa"
+export interface CostLine {
+  label: string;
+  detail?: string;
+  amount: number;
+}
+
+/** Visto, Seguro Saúde, Outros — como o 1Enrol agrupa fora do curso. */
+export interface CostGroup {
+  id: string;
+  title: string;
+  /** Explicação em linguagem de aluno — é o que falta no PDF cru. */
+  explanation?: string;
+  lines: CostLine[];
+}
+
+/** Uma parcela do Resumo de Pagamentos, com vencimento de verdade. */
+export interface ScheduledPayment {
+  id: string;
+  dueDate: string;        // YYYY-MM-DD
+  description: string;    // "Tuition Fee", "Visa", "Health Cover"
+  payee?: string;         // para quem vai o dinheiro
   amount: number;
 }
 
@@ -42,19 +53,20 @@ export type QuotationStatus = "draft" | "sent" | "accepted" | "expired";
 export interface Quotation {
   id: string;
   leadId: string;
-  number: string;              // HA-0001
-  packageName: string;         // "6 meses de inglês + 2 anos de Joinery"
+  number: string;               // HA-0001 ou o nº do 1Enrol
+  packageName: string;
   city: string;
-  currency: string;            // AUD
+  currency: string;             // AUD
   courses: QuotationCourse[];
-  visaCosts: VisaCostLine[];
-  /** Aviso em destaque no topo, quando houver algo que o aluno precisa saber. */
+  costGroups: CostGroup[];
+  schedule: ScheduledPayment[];
   importantNote?: string;
-  validUntil?: string;         // YYYY-MM-DD
+  validUntil?: string;
   status: QuotationStatus;
   /** Token do link público — quem tem o link vê a cotação. */
   publicToken: string;
-  sourceFileName?: string;     // PDF do 1Enrol que originou
+  sourceFileName?: string;
+  sourceNumber?: string;        // "Cotação nº226601" do 1Enrol
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -64,9 +76,13 @@ export interface Quotation {
 export interface QuotationTotals {
   courseTotals: { courseId: string; total: number }[];
   coursesTotal: number;
-  depositTotal: number;        // o que paga agora, para obter o CoE
-  visaTotal: number;
-  upfrontTotal: number;        // depósito + custos de visto
-  remainingTotal: number;      // saldo parcelado
-  grandTotal: number;          // tudo somado
+  groupTotals: { groupId: string; total: number }[];
+  extrasTotal: number;
+  grandTotal: number;
+  /** Soma das parcelas que vencem na primeira data do cronograma. */
+  upfrontTotal: number;
+  upfrontDate?: string;
+  /** O que fica para depois dessa primeira data. */
+  remainingTotal: number;
+  scheduleTotal: number;
 }
