@@ -69,6 +69,9 @@ export function CRMProvider({ children }: { children: ReactNode }) {
 
   // Initial load
   useEffect(() => {
+    // Visitante anônimo (ex.: aluno abrindo o link da cotação) não tem CRM para
+    // carregar — buscar aqui só renderia 401 e um erro na tela dele.
+    if (!user) { setLoading(false); return; }
     Promise.all([
       fetch("/api/leads").then((r) => r.json()),
       fetch("/api/reminders").then((r) => r.json()),

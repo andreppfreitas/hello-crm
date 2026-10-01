@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const SESSION_COOKIE = "hello_crm_session";
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/verify-code", "/api/auth/resend-code"];
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/verify-code", "/api/auth/resend-code", "/cotacao"];
 
 // sha256 via WebCrypto (Edge runtime)
 async function sha256Hex(value: string): Promise<string> {

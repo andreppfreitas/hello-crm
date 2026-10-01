@@ -42,3 +42,47 @@ export async function dbGetStageSteps(): Promise<Record<string, string[]>> {
 export async function dbSaveStageSteps(steps: Record<string, string[]>): Promise<void> {
   await redis.set(STEPS_KEY, steps);
 }
+
+// ── Cotações ──────────────────────────────────────────────────────────────────
+
+import type { Quotation } from "@/types/quotation";
+
+const QUOTE_KEY = (id: string) => `crm:quotation:${id}`;
+const QUOTE_IDS = "crm:quotation:ids";
+const QUOTE_BY_TOKEN = (token: string) => `crm:quotation:token:${token}`;
+const QUOTE_SEQ = "crm:quotation:seq";
+
+export async function dbNextQuotationSeq(): Promise<number> {
+  return redis.incr(QUOTE_SEQ);
+}
+
+export async function dbSaveQuotation(q: Quotation): Promise<void> {
+  await redis.set(QUOTE_KEY(q.id), q);
+  await redis.sadd(QUOTE_IDS, q.id);
+  // Índice do link público: token → id, para o aluno abrir sem login
+  await redis.set(QUOTE_BY_TOKEN(q.publicToken), q.id);
+}
+
+export async function dbGetQuotation(id: string): Promise<Quotation | null> {
+  return redis.get<Quotation>(QUOTE_KEY(id));
+}
+
+export async function dbGetQuotationByToken(token: string): Promise<Quotation | null> {
+  const id = await redis.get<string>(QUOTE_BY_TOKEN(token));
+  return id ? dbGetQuotation(id) : null;
+}
+
+export async function dbGetQuotationsByLead(leadId: string): Promise<Quotation[]> {
+  const ids = await redis.smembers(QUOTE_IDS);
+  if (!ids.length) return [];
+  const all = await Promise.all(ids.map((id) => dbGetQuotation(id)));
+  return (all.filter(Boolean) as Quotation[])
+    .filter((q) => q.leadId === leadId)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function dbDeleteQuotation(q: Quotation): Promise<void> {
+  await redis.del(QUOTE_KEY(q.id));
+  await redis.del(QUOTE_BY_TOKEN(q.publicToken));
+  await redis.srem(QUOTE_IDS, q.id);
+}

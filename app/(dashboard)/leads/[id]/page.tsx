@@ -12,6 +12,7 @@ import { getAutoTasks, getAutoTaskDef } from "@/lib/auto-tasks";
 import { useAuth } from "@/contexts/AuthContext";
 import { enrollmentCommission, formatAUD } from "@/lib/commission";
 import { PaymentsTab } from "@/components/leads/PaymentsTab";
+import { QuotationsTab } from "@/components/leads/QuotationsTab";
 import { advanceChain, chainProgress } from "@/lib/task-chain";
 import { nextStage } from "@/lib/work-queue";
 import { notFound, useRouter } from "next/navigation";
@@ -34,7 +35,7 @@ import { ReminderModal } from "@/components/shared/ReminderModal";
 import { GroupModal } from "@/components/shared/GroupModal";
 import { Link2 } from "lucide-react";
 
-const TABS = ["Overview", "Tasks", "Notes", "Timeline", "Payments", "Visa", "Documents"] as const;
+const TABS = ["Overview", "Tasks", "Notes", "Timeline", "Cotações", "Payments", "Visa", "Documents"] as const;
 type Tab = typeof TABS[number];
 
 const VISA_PRESETS = [
@@ -927,6 +928,10 @@ export default function LeadProfilePage({ params }: { params: Promise<{ id: stri
 
             {activeTab === "Timeline" && (
               <TimelineTab lead={lead} />
+            )}
+
+            {activeTab === "Cotações" && (
+              <QuotationsTab lead={lead} />
             )}
 
             {activeTab === "Payments" && (
