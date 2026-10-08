@@ -299,9 +299,11 @@ function LeadsInner() {
     list.sort((a, b) => {
       if (sortField === "score") return sortDir === "asc" ? (a.score ?? 0) - (b.score ?? 0) : (b.score ?? 0) - (a.score ?? 0);
       if (sortField === "visaExpiryDate") {
-        // Três blocos fixos, independentes da direção da ordenação:
-        // 1) quem tem data (ordenado por data)  2) offshore  3) sem data preenchida
-        const bucket = (l: typeof a) => (l.visaExpiryDate ? 0 : l.isOffshore ? 1 : 2);
+        // Blocos fixos, independentes da direção da ordenação:
+        // 1) quem tem data (ordenado por data)  2) offshore
+        // 3) só o tipo de visto preenchido      4) nada preenchido
+        const bucket = (l: typeof a) =>
+          l.visaExpiryDate ? 0 : l.isOffshore ? 1 : l.currentVisaType?.trim() ? 2 : 3;
         const ba = bucket(a), bb = bucket(b);
         if (ba !== bb) return ba - bb;
         if (ba !== 0) return a.fullName.localeCompare(b.fullName);
@@ -520,6 +522,10 @@ function LeadsInner() {
                 );
               })()}
 
+              {!lead.visaExpiryDate && lead.currentVisaType?.trim() && (
+                <p className="text-xs text-sky-400 font-medium">🛂 {lead.currentVisaType}</p>
+              )}
+
               <div className="flex items-center justify-between">
                 <span className="text-xs text-muted-foreground">{formatDate(lead.createdAt)}</span>
                 <div className="flex items-center gap-1">
@@ -638,7 +644,16 @@ function LeadsInner() {
                           </span>
                         </div>
                       );
-                    })() : (
+                    })() : lead.currentVisaType?.trim() ? (
+                      // Sem data nem offshore, mas o visto foi preenchido: mostra o que
+                      // está lá em vez de "—", senão a informação morre dentro do perfil.
+                      <span
+                        title={lead.currentVisaType}
+                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full border w-fit max-w-[140px] truncate inline-block bg-sky-500/15 text-sky-400 border-sky-500/30"
+                      >
+                        🛂 {lead.currentVisaType}
+                      </span>
+                    ) : (
                       <span className="text-xs text-muted-foreground/40">—</span>
                     )}
                   </td>
