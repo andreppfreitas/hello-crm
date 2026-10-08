@@ -4,6 +4,7 @@ import { useCRM } from "@/contexts/CRMContext";
 import { TemperatureBadge } from "@/components/shared/TemperatureBadge";
 import { PHASE_ORDER, PHASE_CONFIG, STAGE_CONFIG, NEXT_ACTION_CONFIG, WAITING_FOR_CONFIG, ALL_STAGES } from "@/lib/constants";
 import { initials, formatDate } from "@/lib/utils";
+import { isVisaExpired } from "@/lib/lead-status";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import type { Lead, PipelineStage } from "@/types";
@@ -228,6 +229,8 @@ function PipelineInner() {
   const { leads, updateLead } = useCRM();
   const searchParams = useSearchParams();
   const consultantFilter = searchParams.get("consultant") ?? "";
+  const [showExpired, setShowExpired] = useState(false);
+  const expiredLeads = leads.filter((l) => isVisaExpired(l));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeOverId, setActiveOverId] = useState<string | null>(null);
   const [waLead, setWaLead] = useState<Lead | null>(null);
@@ -276,6 +279,19 @@ function PipelineInner() {
   return (
     <div className="flex flex-col gap-3 h-full overflow-hidden">
       {waLead && <WhatsAppTemplateModal lead={waLead} isOpen={!!waLead} onClose={() => setWaLead(null)} />}
+      {expiredLeads.length > 0 && (
+        <div className="flex items-center gap-2 px-1 flex-shrink-0 flex-wrap">
+          <span className="text-xs text-red-400">
+            🛂 {expiredLeads.length} aluno(s) com visto vencido {showExpired ? "sendo exibidos" : "fora do quadro"}
+          </span>
+          <button
+            onClick={() => setShowExpired((v) => !v)}
+            className="text-xs text-muted-foreground hover:text-foreground underline"
+          >
+            {showExpired ? "ocultar" : "mostrar mesmo assim"}
+          </button>
+        </div>
+      )}
       {consultantFilter && (
         <div className="flex items-center gap-2 px-1 flex-shrink-0">
           <span className="text-xs text-muted-foreground">Pipeline de:</span>
@@ -292,9 +308,12 @@ function PipelineInner() {
       >
         {PHASE_ORDER.map((phase) => {
           const cfg = PHASE_CONFIG[phase];
+          // Visto vencido = aluno fora de status; sai do quadro para não ocupar
+          // coluna como se ainda fosse trabalhável. Igual à lista de Leads.
+          const trabalhaveis = showExpired ? leads : leads.filter((l) => !isVisaExpired(l));
           const visibleLeads = consultantFilter
-            ? leads.filter((l) => l.assignedConsultant === consultantFilter)
-            : leads;
+            ? trabalhaveis.filter((l) => l.assignedConsultant === consultantFilter)
+            : trabalhaveis;
           const phaseLeads = visibleLeads.filter((l) => STAGE_CONFIG[l.stage].phase === phase);
 
           return (
