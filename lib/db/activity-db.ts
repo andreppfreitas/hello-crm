@@ -86,3 +86,29 @@ export async function dbDeleteQuotation(q: Quotation): Promise<void> {
   await redis.del(QUOTE_BY_TOKEN(q.publicToken));
   await redis.srem(QUOTE_IDS, q.id);
 }
+
+// ── Logos lembrados por escola/seguradora ─────────────────────────────────────
+// O logo automático falha com frequência (muita escola não publica favicon
+// decente). Quando o consultor cola a URL uma vez, fica guardada e volta
+// sozinha nas próximas cotações daquela escola.
+
+import { normalizeBrandName } from "@/lib/brand-registry";
+
+const LOGOS_KEY = "crm:brand:logos";
+
+export async function dbGetRememberedLogos(): Promise<Record<string, string>> {
+  return (await redis.get<Record<string, string>>(LOGOS_KEY)) ?? {};
+}
+
+export async function dbRememberLogo(name: string, url: string): Promise<void> {
+  const chave = normalizeBrandName(name);
+  if (!chave || !url) return;
+  const atual = await dbGetRememberedLogos();
+  if (atual[chave] === url) return;
+  await redis.set(LOGOS_KEY, { ...atual, [chave]: url });
+}
+
+export async function dbLookupLogo(name: string | undefined): Promise<string | undefined> {
+  if (!name?.trim()) return undefined;
+  return (await dbGetRememberedLogos())[normalizeBrandName(name)];
+}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/security/auth";
-import { dbGetQuotation, dbSaveQuotation, dbDeleteQuotation } from "@/lib/db/activity-db";
+import { dbGetQuotation, dbSaveQuotation, dbDeleteQuotation, dbRememberLogo } from "@/lib/db/activity-db";
 import type { Quotation } from "@/types/quotation";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -24,6 +24,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
   const updated: Quotation = { ...existing, ...safe, updatedAt: new Date().toISOString() };
   await dbSaveQuotation(updated);
+
+  // Guarda os logos informados à mão para reaproveitar nas próximas cotações
+  await Promise.all([
+    ...updated.courses.map((c) => (c.logoUrl && c.school ? dbRememberLogo(c.school, c.logoUrl) : null)),
+    ...updated.costGroups.map((g) => (g.logoUrl && g.brandName ? dbRememberLogo(g.brandName, g.logoUrl) : null)),
+  ].filter(Boolean));
   return NextResponse.json({ quotation: updated });
 }
 

@@ -22,6 +22,8 @@ export interface QuotationCourse {
   startDate?: string;           // YYYY-MM-DD
   endDate?: string;
   fees: FeeLine[];
+  /** Logo da escola, quando o automático não encontra ou fica ruim. */
+  logoUrl?: string;
 }
 
 export interface CostLine {
@@ -37,6 +39,9 @@ export interface CostGroup {
   /** Explicação em linguagem de aluno — é o que falta no PDF cru. */
   explanation?: string;
   lines: CostLine[];
+  /** Marca associada ao grupo (seguradora do OSHC, por exemplo). */
+  brandName?: string;
+  logoUrl?: string;
 }
 
 /** Uma parcela do Resumo de Pagamentos, com vencimento de verdade. */

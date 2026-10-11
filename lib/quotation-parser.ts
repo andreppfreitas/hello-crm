@@ -1,4 +1,5 @@
 import { parseMoney } from "./commission";
+import { findBrand } from "./brand-registry";
 import type {
   QuotationCourse, CostGroup, CostLine, FeeLine, ScheduledPayment,
 } from "@/types/quotation";
@@ -212,6 +213,14 @@ export function parseQuotationText(raw: string): ParsedQuotation {
     }
   }
   fecharSecao();
+
+  // Marca do grupo: a seguradora aparece no nome da linha ("BUPA OSHC - Single
+  // Cover"), não no título "Seguro Saúde" — é de lá que sai o logo.
+  for (const g of r.costGroups) {
+    const comMarca = g.lines.find((l) => findBrand(l.label));
+    if (comMarca) g.brandName = findBrand(comMarca.label)!.label;
+    else if (findBrand(g.title)) g.brandName = findBrand(g.title)!.label;
+  }
 
   // ── Conferência contra os totais que o PDF declara ──
   const fmtNum = (n: number) => n.toLocaleString("en-AU", { minimumFractionDigits: 2 });

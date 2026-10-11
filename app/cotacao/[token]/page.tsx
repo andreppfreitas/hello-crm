@@ -6,6 +6,7 @@ import {
 } from "@/lib/quotation";
 import type { Quotation, QuotationCourse, CostGroup } from "@/types/quotation";
 import { QuotationActions } from "./QuotationActions";
+import { BrandLogo } from "./BrandLogo";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,9 @@ function CursoCard({ curso, indice, moeda }: { curso: QuotationCourse; indice: n
   return (
     <article className="q-card">
       <header className="q-card-head">
-        <div className="q-min">
+        <div className="q-brand-row q-min">
+          <BrandLogo name={curso.school || curso.course} logoUrl={curso.logoUrl} size={44} />
+          <div className="q-min">
           <p className="q-eyebrow">Curso {indice}</p>
           <h3 className="q-card-title">{curso.course || "Curso"}</h3>
           <p className="q-sub">
@@ -49,6 +52,7 @@ function CursoCard({ curso, indice, moeda }: { curso: QuotationCourse; indice: n
             {curso.cricos && <span className="q-detail"> · CRICOS {curso.cricos}</span>}
           </p>
           {curso.location && <p className="q-detail">{curso.location}</p>}
+          </div>
         </div>
         <div className="q-card-amount">
           <p className="q-eyebrow">Investimento</p>
@@ -80,7 +84,13 @@ function CursoCard({ curso, indice, moeda }: { curso: QuotationCourse; indice: n
 function GrupoCard({ grupo, moeda }: { grupo: CostGroup; moeda: string }) {
   return (
     <article className="q-card">
-      <h3 className="q-card-title q-card-title-sm">{grupo.title}</h3>
+      <div className="q-brand-row">
+        {grupo.brandName && <BrandLogo name={grupo.brandName} logoUrl={grupo.logoUrl} size={36} />}
+        <div className="q-min">
+          <h3 className="q-card-title q-card-title-sm">{grupo.title}</h3>
+          {grupo.brandName && <p className="q-detail">{grupo.brandName}</p>}
+        </div>
+      </div>
       {grupo.explanation && <p className="q-lede q-mt-sm">{grupo.explanation}</p>}
       <div className="q-mt">
         {grupo.lines.map((l, i) => (
@@ -119,8 +129,10 @@ export function QuotationView({ quotation: q, studentName }: { quotation: Quotat
         <header className="q-header">
           <div className="q-card-head">
             <div className="q-min">
-              <p className="q-eyebrow">
-                Hello Australia · Cotação {q.sourceNumber ?? q.number}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/hello-logo.png" alt="Hello Australia" className="q-hello-logo" />
+              <p className="q-eyebrow q-mt-sm">
+                Cotação {q.sourceNumber ?? q.number}
               </p>
               <h1 className="q-title">{q.packageName}</h1>
               <p className="q-sub">{q.city}</p>
@@ -264,7 +276,9 @@ export function QuotationView({ quotation: q, studentName }: { quotation: Quotat
         </section>
 
         <footer className="q-footer">
-          <p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/hello-logo.png" alt="Hello Australia" className="q-hello-logo q-hello-logo-sm" />
+          <p className="q-mt-sm">
             Dúvida em qualquer ponto desta cotação? Fale com <strong>{q.createdBy}</strong> —
             é melhor perguntar antes de pagar qualquer coisa.
           </p>

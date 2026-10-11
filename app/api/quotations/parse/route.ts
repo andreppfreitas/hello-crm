@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireSession } from "@/lib/security/auth";
 import { extractText, getDocumentProxy } from "unpdf";
 import { parseQuotationText } from "@/lib/quotation-parser";
+import { dbLookupLogo } from "@/lib/db/activity-db";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -49,6 +50,12 @@ export async function POST(request: NextRequest) {
   }
 
   const draft = parseQuotationText(text);
+
+  // Reaproveita logos já informados para estas escolas/seguradoras
+  await Promise.all([
+    ...draft.courses.map(async (c) => { c.logoUrl = await dbLookupLogo(c.school); }),
+    ...draft.costGroups.map(async (g) => { g.logoUrl = await dbLookupLogo(g.brandName); }),
+  ]).catch(() => {});
 
   return NextResponse.json({
     fileName: file.name,

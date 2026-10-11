@@ -245,3 +245,27 @@
   .q-card-amount { text-align: left; }
   .q-timeline li { padding-left: 18px; }
 }
+
+/* ── Marca ──────────────────────────────────────────────────────────────── */
+.q-hello-logo { height: 46px; width: auto; display: block; }
+.q-hello-logo-sm { height: 32px; opacity: .8; }
+
+.q-brand-row { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+/* Logo em caixa neutra: o fundo branco isola marcas de cores conflitantes */
+.q-logo {
+  flex: 0 0 auto;
+  border-radius: 10px;
+  border: 1px solid var(--q-line);
+  background: #fff;
+  object-fit: contain;
+  padding: 4px;
+}
+.q-logo-mono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: .02em;
+  padding: 0;
+}

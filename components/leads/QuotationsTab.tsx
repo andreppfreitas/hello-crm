@@ -233,6 +233,8 @@ export function QuotationsTab({ lead }: { lead: Lead }) {
                 <Input value={c.school} onChange={(e) => setCurso(c.id, { school: e.target.value })} placeholder="Escola" className="bg-secondary/50" />
                 <Input value={c.durationLabel} onChange={(e) => setCurso(c.id, { durationLabel: e.target.value })} placeholder="Duração (ex: 88 semanas)" className="bg-secondary/50" />
                 <Input value={c.location ?? ""} onChange={(e) => setCurso(c.id, { location: e.target.value })} placeholder="Cidade do campus" className="bg-secondary/50" />
+                <Input value={c.logoUrl ?? ""} onChange={(e) => setCurso(c.id, { logoUrl: e.target.value || undefined })}
+                  placeholder="URL do logo da escola (opcional)" className="bg-secondary/50 sm:col-span-2" />
                 <div>
                   <label className="text-[10px] text-muted-foreground uppercase tracking-wider">Início</label>
                   <Input type="date" value={c.startDate ?? ""} onChange={(e) => setCurso(c.id, { startDate: e.target.value })} className="bg-secondary/50 mt-0.5" />
@@ -281,6 +283,12 @@ export function QuotationsTab({ lead }: { lead: Lead }) {
                 <span className="text-xs font-semibold text-emerald-300 tabular-nums">{fmt(groupTotal(g), q.currency)}</span>
                 <button onClick={() => set({ costGroups: q.costGroups.filter((x) => x.id !== g.id) })}
                   className="text-muted-foreground hover:text-destructive"><Trash2 className="w-3.5 h-3.5" /></button>
+              </div>
+              <div className="flex gap-2">
+                <Input value={g.brandName ?? ""} onChange={(e) => setGrupo(g.id, { brandName: e.target.value || undefined })}
+                  placeholder="Marca (ex: Bupa)" className="bg-secondary/50 w-40" />
+                <Input value={g.logoUrl ?? ""} onChange={(e) => setGrupo(g.id, { logoUrl: e.target.value || undefined })}
+                  placeholder="URL do logo (opcional)" className="bg-secondary/50 flex-1" />
               </div>
               <textarea value={g.explanation ?? ""} onChange={(e) => setGrupo(g.id, { explanation: e.target.value })}
                 rows={2} placeholder="Explique ao aluno o que é este custo e para quem vai o dinheiro."
